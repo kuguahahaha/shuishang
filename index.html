@@ -788,6 +788,17 @@
         return String(n);
     }
 
+    // 积分展示：保留 2 位小数，四舍五入
+    // 负数按绝对值四舍五入（-4.655 → -4.66），极小值归零避免出现 -0.00
+    function pointsText(n) {
+        const sign = n < 0 ? -1 : 1;
+        let v = sign * Math.round(Math.abs(n) * 100 + 1e-9) / 100;
+        if (Math.abs(v) < 0.005) {
+            v = 0;
+        }
+        return v.toFixed(2);
+    }
+
     // 读取某个筹码数量：空值/非法值/负数一律按 0 处理，小数向下取整
     function readChipCount(el) {
         let n = parseInt(el.value, 10);
@@ -884,7 +895,8 @@
         // 3. 积分：净筹码 → 积分 → 向下取整（即最终决算分）
         const netChips = total - hands * WC_HAND_CHIPS;
         const points = netChips / WC_POINT_UNIT;
-        wcPointsEl.textContent = points.toFixed(4);
+        // 积分显示保留 2 位小数（四舍五入），决算分仍向下取整
+        wcPointsEl.textContent = pointsText(points);
         wcFloorEl.textContent = intText(Math.floor(points));
 
         // 4. 补购卡现金结算：需还 = 张数×2W，还差 = 需还 − 手上筹码
