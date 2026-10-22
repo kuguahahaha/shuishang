@@ -136,7 +136,7 @@
         }
 /* ==========================================================
            新增：水上俱乐部 积分结算模块
-           规则：筹码总值 → 扣手数 → 积分（÷2000）→ 向下取整决算
+           规则：筹码 → 扣手数 → 积分（÷2000）→ 向下取整决算
            ========================================================== */
         .wc-section {
             background: -webkit-linear-gradient(top, #f2f8ff 0%, #fbfdff 100%);
@@ -202,7 +202,7 @@
             width: 88px;
             min-width: 88px;
             padding: 4px 8px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 400;
             border-radius: 6px;
             text-align: center;
@@ -287,7 +287,7 @@
         .wc-chip input {
             text-align: center !important;
             padding: 8px 2px;
-            font-size: 14px;
+            font-size: 15px;
             background: #ffffff;
             -webkit-text-align: center !important;
         }
@@ -319,7 +319,7 @@
         .wc-blue   label { color: #1976d2; }
         .wc-green  label { color: #2e7d32; }
 
-        /* 第二行：筹码总值（输出） + 补购卡张数（输入，= 手数）并排 */
+        /* 第二行：筹码（输出） + 黄卡张数（输入，= 手数）并排 */
         .wc-row2 {
             display: -webkit-box;
             display: -ms-flexbox;
@@ -404,7 +404,7 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* 补购卡张数 / 剩余张数 / 目标输入块 */
+        /* 黄卡张数 / 剩余黄卡 / 目标输入块 */
         .wc-hands {
             display: -webkit-box;
             display: -ms-flexbox;
@@ -423,7 +423,7 @@
             -ms-flex-wrap: wrap;
             flex-wrap: wrap;
         }
-        /* 第三行（剩余张数 / 目标）需要更宽的基准，窄屏自动换行 */
+        /* 第三行（剩余黄卡 / 目标）需要更宽的基准，窄屏自动换行 */
         .wc-row3 > * {
             -ms-flex: 1 1 190px;
             flex: 1 1 190px;
@@ -441,7 +441,7 @@
             flex: 0 0 52px;
             width: 52px;
             padding: 7px 2px;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
             text-align: center;
         }
@@ -509,14 +509,14 @@
         .wc-card .wc-v {
             text-align: center;
         }
-        /* 剩余张数 / 归还目标里的小输入框 */
+        /* 剩余黄卡 / 归还目标里的小输入框 */
         .wc-mini {
             -webkit-box-flex: 0;
             -ms-flex: 0 0 52px;
             flex: 0 0 52px;
             width: 52px;
             padding: 7px 2px;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
             text-align: center;
         }
@@ -567,7 +567,7 @@
             text-align: center;
         }
 
-        /* 补购卡（黄卡）结算区：红金配色，和积分区区分开 */
+        /* 黄卡（黄卡）结算区：红金配色，和积分区区分开 */
         .wc-money .wc-card {
             background: #fffaf9;
             border-color: #f7d9d2;
@@ -614,7 +614,7 @@
                 <span class="wc-title-bar"></span>
                 <h3 id="wcTitle">水上俱乐部</h3>
             </div>
-            <input type="text" id="wcNickname" class="wc-nick" placeholder="可输入昵称" maxlength="12">
+            <input type="text" id="wcNickname" class="wc-nick" placeholder="输入昵称" maxlength="12">
             <span class="wc-badge-box"><span class="wc-badge">积分结算</span></span>
         </div>
 
@@ -650,39 +650,30 @@
             </div>
         </div>
 
-        <!-- 第二行：筹码总值（输出） + 补购卡张数（= 手数） -->
+        <!-- 第二行：筹码（输出） + 使用黄卡（= 手数） -->
         <div class="wc-row2">
             <div class="wc-total-bar">
-                <span class="wc-k">筹码总值</span>
-                <span><span class="wc-v" id="wcChipTotal">0</span><span class="wc-unit">筹码</span></span>
+                <span class="wc-k">筹码</span>
+                <span><span class="wc-v" id="wcChipTotal">0</span></span>
             </div>
             <div class="wc-hands" id="wcHandsBox">
-                <span class="wc-hands-label">补购卡</span>
-                <button type="button" class="wc-step" data-step="-1">−</button>
+                <span class="wc-hands-label">使用黄卡</span>
                 <input type="number" id="wcHands" step="1" placeholder="0">
-                <button type="button" class="wc-step" data-step="1">＋</button>
             </div>
         </div>
-        <div class="wc-err" id="wcHandsErr">补购卡张数必须为整数（正整数或负整数）</div>
+        <div class="wc-err" id="wcHandsErr">黄卡张数必须为整数（正整数或负整数）</div>
 
-        <!-- 第三行：剩余张数（与补购卡张数互斥） + 归还目标（张数/筹码二选一） -->
-        <div class="wc-row2 wc-row3">
+        <!-- 第三行：剩余黄卡（与使用黄卡互斥） -->
+        <div class="wc-row2">
             <div class="wc-hands">
-                <span class="wc-hands-label">剩余张数</span>
+                <span class="wc-hands-label">剩余黄卡</span>
                 <input type="number" id="wcLeft" step="1" placeholder="7" class="wc-mini">
             </div>
-            <div class="wc-hands">
-                <span class="wc-hands-label">目标</span>
-                <input type="number" id="wcTargetCards" step="1" placeholder="7" class="wc-mini">
-                <span class="wc-sep">张 =</span>
-                <input type="number" id="wcTargetChips" step="10000" placeholder="140000" class="wc-mini wc-mini-wide">
-                <span class="wc-sep">筹码</span>
-            </div>
         </div>
-        <div class="wc-tip" id="wcDeductInfo">1 张补购卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，补购卡张数 + 剩余张数 = 归还目标张数</div>
+        <div class="wc-tip" id="wcDeductInfo">1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，使用黄卡 + 剩余黄卡 = 7 张</div>
 
-        <!-- 积分结算结果（已扣补购卡后的净值） -->
-        <div class="wc-sub">🏅 积分决算 · 已扣补购卡</div>
+        <!-- 积分结算结果（已扣黄卡后的净值） -->
+        <div class="wc-sub">🏅 积分决算 · 已扣黄卡</div>
         <div class="wc-grid wc-final wc-grid-2">
             <div class="wc-card">
                 <div class="wc-k">积分结算</div>
@@ -694,8 +685,8 @@
             </div>
         </div>
 
-        <!-- 补购卡（黄卡）结算：还差多少筹码 → 应付多少钱 -->
-        <div class="wc-sub wc-sub-money">💰 补购卡结算 · 每手（2W）10 元</div>
+        <!-- 黄卡（黄卡）结算：还差多少筹码 → 应付多少钱 -->
+        <div class="wc-sub wc-sub-money">💰 黄卡结算 · 每手（2W）10 元</div>
         <div class="wc-grid wc-money">
             <div class="wc-card">
                 <div class="wc-k">需还筹码</div>
@@ -718,17 +709,16 @@
 
     <div class="info">
         <strong>🏊 结算规则：</strong><br>
-        筹码总值 = 10000×a + 5000×b + 1000×c + 500×d + 100×e + 100000×f + 50000×g<br>
-        净筹码 = 筹码总值 − 补购卡张数 × 20000<br>
+        筹码 = 10000×a + 5000×b + 1000×c + 500×d + 100×e + 100000×f + 50000×g<br>
+        净筹码 = 筹码 − 黄卡张数 × 20000<br>
         积分 = 净筹码 ÷ 2000，<span>向下取整（取整数倍）即为最终决算分</span><br>
-        补购卡张数 + 剩余张数 = 目标张数（默认 7 张 = 14W 筹码）<br>
-        还差筹码 = 补购卡张数 × 20000 − 筹码总值<br>
+        使用黄卡 + 剩余黄卡 = 7 张（= 14W 筹码）<br>
+        还差筹码 = 黄卡张数 × 20000 − 筹码<br>
         <span>每缺 1 手（2W 筹码）付 10 元，不足 1 手按 1 手算</span><br><br>
         <strong>💡 使用说明：</strong><br>
-        补购卡张数与剩余张数互斥，填一个另一个自动算<br>
-        归还目标张数与筹码二选一，填一个另一个自动算<br>
+        使用黄卡与剩余黄卡互斥，填一个另一个自动算<br>
         张数可为负整数（表示加回 / 退卡）<br>
-        昵称实时显示在标题上，不做存储，刷新即清空<br>
+        昵称仅作标记展示，不做存储，刷新即清空<br>
         按 Enter 快捷计算，点击「重置所有」恢复默认 7 张 / 14W
     </div>
 </div>
@@ -747,7 +737,7 @@
         { id: 'wc5w',   value: 50000  }
     ];
     const WC_POINT_UNIT = 2000;                                  // 多少筹码 = 1 积分
-    const WC_HAND_CHIPS = 20000;                                 // 1 手 = 1 张补购卡 = 2W 筹码
+    const WC_HAND_CHIPS = 20000;                                 // 1 手 = 1 张黄卡 = 2W 筹码
     const WC_HAND_POINTS = WC_HAND_CHIPS / WC_POINT_UNIT;        // 1 手 = 10 积分
     const WC_HAND_MONEY = 10;                                    // 每缺 1 手需付 10 元
     const WC_DEFAULT_CARDS = 7;                                  // 默认归还目标：7 张
@@ -764,8 +754,6 @@
     const wcHandsBox = document.getElementById('wcHandsBox');
     const wcHandsErr = document.getElementById('wcHandsErr');
     const wcLeftInput = document.getElementById('wcLeft');
-    const wcTargetCardsInput = document.getElementById('wcTargetCards');
-    const wcTargetChipsInput = document.getElementById('wcTargetChips');
     const wcNeedChipsEl = document.getElementById('wcNeedChips');
     const wcGapChipsEl = document.getElementById('wcGapChips');
     const wcPayMoneyEl = document.getElementById('wcPayMoney');
@@ -822,13 +810,12 @@
         return isNaN(n) ? null : n;
     }
 
-    // 当前归还目标（张数为准，筹码 = 张数 × 2W）
+    // 归还目标固定为 7 张（= 14W 筹码），页面已不提供输入
     function readTargetCards() {
-        const cards = readInt(wcTargetCardsInput);
-        return (cards === null || cards < 0) ? WC_DEFAULT_CARDS : cards;
+        return WC_DEFAULT_CARDS;
     }
 
-    // 补购卡张数 → 剩余张数（互斥：两者相加 = 目标张数）
+    // 黄卡张数 → 剩余黄卡（互斥：两者相加 = 目标张数）
     function syncLeftFromHands() {
         const hands = readInt(wcHandsInput);
         if (hands === null) {
@@ -837,7 +824,7 @@
         wcLeftInput.value = readTargetCards() - hands;
     }
 
-    // 剩余张数 → 补购卡张数（互斥，反推）
+    // 剩余黄卡 → 黄卡张数（互斥，反推）
     function syncHandsFromLeft() {
         const left = readInt(wcLeftInput);
         if (left === null) {
@@ -846,36 +833,17 @@
         wcHandsInput.value = readTargetCards() - left;
     }
 
-    // 目标张数 → 目标筹码（同步回填）
-    function syncTargetFromCards() {
-        const cards = readTargetCards();
-        wcTargetChipsInput.value = cards * WC_HAND_CHIPS;
-    }
-
-    // 目标筹码 → 目标张数（四舍五入到整张，输完再回填筹码避免打断输入）
-    function syncTargetFromChips(fillBack) {
-        const chips = readInt(wcTargetChipsInput);
-        if (chips === null || chips < 0) {
-            return;
-        }
-        const cards = Math.round(chips / WC_HAND_CHIPS);
-        wcTargetCardsInput.value = cards;
-        if (fillBack) {
-            wcTargetChipsInput.value = cards * WC_HAND_CHIPS;
-        }
-    }
-
-    // 核心：水上俱乐部结算（积分 + 补购卡现金）
-    // 口径：净筹码 = 筹码总值 − 补购卡张数×2W → 积分 = 净筹码÷2000 → 向下取整
+    // 核心：水上俱乐部结算（积分 + 黄卡现金）
+    // 口径：净筹码 = 筹码 − 黄卡张数×2W → 积分 = 净筹码÷2000 → 向下取整
     function calcWaterClub() {
-        // 1. 累加筹码总值（毛值）
+        // 1. 累加筹码（毛值）
         let total = 0;
         WC_CHIPS.forEach(function (chip, index) {
             total += readChipCount(wcInputs[index]) * chip.value;
         });
         wcChipTotalEl.textContent = intText(total);
 
-        // 2. 补购卡张数校验：允许空、正整数、负整数、0；不允许小数和乱填
+        // 2. 黄卡张数校验：允许空、正整数、负整数、0；不允许小数和乱填
         const hands = readInt(wcHandsInput);
 
         if (hands === null) {
@@ -886,7 +854,7 @@
             wcNeedChipsEl.textContent = '—';
             wcGapChipsEl.textContent = '—';
             wcPayMoneyEl.textContent = '—';
-            wcMoneyInfo.innerHTML = '请先填写正确的补购卡张数（整数）';
+            wcMoneyInfo.innerHTML = '请先填写正确的黄卡张数（整数）';
             return;
         }
 
@@ -900,7 +868,7 @@
         wcPointsEl.textContent = pointsText(points);
         wcFloorEl.textContent = intText(Math.floor(points));
 
-        // 4. 补购卡现金结算：需还 = 张数×2W，还差 = 需还 − 手上筹码
+        // 4. 黄卡现金结算：需还 = 张数×2W，还差 = 需还 − 手上筹码
         const needChips = hands * WC_HAND_CHIPS;
         const gapChips = Math.max(0, needChips - total);        // 筹码不够的部分
         const gapHands = Math.ceil(gapChips / WC_HAND_CHIPS);   // 不足 1 手按 1 手算
@@ -917,19 +885,19 @@
         } else {
             wcPayCard.classList.add('is-ok');
             const extra = total - needChips;
-            wcMoneyInfo.innerHTML = (hands === 0 ? '未使用补购卡，' : '已还清 ') +
+            wcMoneyInfo.innerHTML = (hands === 0 ? '未使用黄卡，' : '已还清 ') +
                 '无需补款' + (extra > 0 ? '，多余 <b>' + intText(extra) + '</b> 筹码' : '');
         }
 
-        // 5. 提示小字：告诉用户补购卡到底折了多少筹码
+        // 5. 提示小字：告诉用户黄卡到底折了多少筹码
         if (hands === 0) {
-            wcDeductInfo.innerHTML = '1 张补购卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，' +
-                '补购卡张数 + 剩余张数 = <b>' + readTargetCards() + '</b> 张';
+            wcDeductInfo.innerHTML = '1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，' +
+                '使用黄卡 + 剩余黄卡 = <b>' + readTargetCards() + '</b> 张';
         } else {
             const chips = Math.abs(hands) * WC_HAND_CHIPS;
             wcDeductInfo.innerHTML = '已' + (hands > 0 ? '扣除' : '加回') + ' <b>' +
                 Math.abs(hands) + '</b> 张（手）= <b>' + intText(chips) +
-                '</b> 筹码，剩余张数 <b>' + intText(readTargetCards() - hands) + '</b>';
+                '</b> 筹码，剩余黄卡 <b>' + intText(readTargetCards() - hands) + '</b>';
         }
     }
 
@@ -945,8 +913,6 @@
         });
         wcHandsInput.value = '';
         wcNicknameInput.value = '';
-        wcTargetCardsInput.value = WC_DEFAULT_CARDS;
-        wcTargetChipsInput.value = WC_DEFAULT_TARGET;
         wcLeftInput.value = WC_DEFAULT_CARDS;
         updateNickname();
         calcWaterClub();
@@ -972,7 +938,7 @@
         }
     });
 
-    // 补购卡张数：变化时同步剩余张数（互斥）
+    // 黄卡张数：变化时同步剩余黄卡（互斥）
     function onHandsChange() {
         syncLeftFromHands();
         calcWaterClub();
@@ -986,7 +952,7 @@
         }
     });
 
-    // 剩余张数：变化时反推补购卡张数（互斥）
+    // 剩余黄卡：变化时反推黄卡张数（互斥）
     function onLeftChange(fillBack) {
         syncHandsFromLeft();
         if (fillBack) {
@@ -1005,53 +971,6 @@
             onLeftChange(true);
             wcLeftInput.blur();
         }
-    });
-
-    // 归还目标：填张数自动算筹码（二选一）
-    function onTargetCardsChange() {
-        syncTargetFromCards();
-        syncLeftFromHands();
-        calcWaterClub();
-    }
-    wcTargetCardsInput.addEventListener('input', onTargetCardsChange);
-    wcTargetCardsInput.addEventListener('change', onTargetCardsChange);
-    wcTargetCardsInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-            onTargetCardsChange();
-            wcTargetCardsInput.blur();
-        }
-    });
-
-    // 归还目标：填筹码自动算张数（输入时不回填，输完/回车再对齐）
-    function onTargetChipsChange(fillBack) {
-        syncTargetFromChips(fillBack);
-        syncLeftFromHands();
-        calcWaterClub();
-    }
-    wcTargetChipsInput.addEventListener('input', function () {
-        onTargetChipsChange(false);
-    });
-    wcTargetChipsInput.addEventListener('change', function () {
-        onTargetChipsChange(true);
-    });
-    wcTargetChipsInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-            onTargetChipsChange(true);
-            wcTargetChipsInput.blur();
-        }
-    });
-
-    // 补购卡加减按钮：手机上没有负号键也能填负数
-    document.querySelectorAll('.wc-step').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const step = parseInt(btn.getAttribute('data-step'), 10) || 0;
-            let current = parseInt(wcHandsInput.value, 10);
-            if (isNaN(current)) {
-                current = 0;
-            }
-            wcHandsInput.value = current + step;
-            onHandsChange();
-        });
     });
 
     /* ===== 独立页专属：重置按钮 + 初始化（源页面的 resetBtn 不在这里） ===== */
