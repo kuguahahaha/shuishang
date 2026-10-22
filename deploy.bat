@@ -71,7 +71,7 @@ if %errorlevel% neq 0 (
 echo.
 echo ============================================================
 echo   推送成功！
-echo   访问：https://USER.github.io/shuishang/
+echo   访问：https://kuguahahaha.github.io/shuishang/
 echo ============================================================
 echo.
 pause

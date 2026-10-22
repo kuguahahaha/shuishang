@@ -4,7 +4,7 @@
 
 ## 在线访问
 
-https://USER.github.io/shuishang/
+https://kuguahahaha.github.io/shuishang/
 
 （首次推送后把 USER 换成实际用户名）
 
