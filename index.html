@@ -618,16 +618,8 @@
             <span class="wc-badge-box"><span class="wc-badge">积分结算</span></span>
         </div>
 
-        <!-- 7 个面额，按面额从大到小排序 -->
+        <!-- 7 个面额：常用小面额在前，大面额在后 -->
         <div class="wc-chips">
-            <div class="wc-chip wc-gold">
-                <label><i class="ball ball-gold"></i>10W</label>
-                <input type="number" id="wc10w" min="0" step="1" placeholder="">
-            </div>
-            <div class="wc-chip wc-orange">
-                <label><i class="ball ball-orange"></i>5W</label>
-                <input type="number" id="wc5w" min="0" step="1" placeholder="">
-            </div>
             <div class="wc-chip wc-black">
                 <label><i class="ball ball-black"></i>1W</label>
                 <input type="number" id="wc1w" min="0" step="1" placeholder="">
@@ -647,6 +639,14 @@
             <div class="wc-chip wc-green">
                 <label><i class="ball ball-green"></i>100</label>
                 <input type="number" id="wc100" min="0" step="1" placeholder="">
+            </div>
+            <div class="wc-chip wc-gold">
+                <label><i class="ball ball-gold"></i>10W</label>
+                <input type="number" id="wc10w" min="0" step="1" placeholder="">
+            </div>
+            <div class="wc-chip wc-orange">
+                <label><i class="ball ball-orange"></i>5W</label>
+                <input type="number" id="wc5w" min="0" step="1" placeholder="">
             </div>
         </div>
 
@@ -718,7 +718,7 @@
 
     <div class="info">
         <strong>🏊 结算规则：</strong><br>
-        筹码总值 = 100000×a + 50000×b + 10000×c + 5000×d + 1000×e + 500×f + 100×g<br>
+        筹码总值 = 10000×a + 5000×b + 1000×c + 500×d + 100×e + 100000×f + 50000×g<br>
         净筹码 = 筹码总值 − 补购卡张数 × 20000<br>
         积分 = 净筹码 ÷ 2000，<span>向下取整（取整数倍）即为最终决算分</span><br>
         补购卡张数 + 剩余张数 = 目标张数（默认 7 张 = 14W 筹码）<br>
@@ -735,15 +735,16 @@
 
 <script>
 /* ==================== 水上俱乐部：配置区 ==================== */
-    // 面额配置：按面额从大到小，顺序即页面显示顺序
+    // 面额配置：顺序与页面显示顺序一致（1W → 5000 → 1000 → 500 → 100 → 10W → 5W）
+    // 面额顺序与页面输入框排列一致：1W → 5000 → 1000 → 500 → 100 → 10W → 5W
     const WC_CHIPS = [
-        { id: 'wc10w',  value: 100000 },
-        { id: 'wc5w',   value: 50000  },
         { id: 'wc1w',   value: 10000  },
         { id: 'wc5000', value: 5000   },
         { id: 'wc1000', value: 1000   },
         { id: 'wc500',  value: 500    },
-        { id: 'wc100',  value: 100    }
+        { id: 'wc100',  value: 100    },
+        { id: 'wc10w',  value: 100000 },
+        { id: 'wc5w',   value: 50000  }
     ];
     const WC_POINT_UNIT = 2000;                                  // 多少筹码 = 1 积分
     const WC_HAND_CHIPS = 20000;                                 // 1 手 = 1 张补购卡 = 2W 筹码
