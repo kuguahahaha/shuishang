@@ -650,24 +650,24 @@
             </div>
         </div>
 
-        <!-- 第二行：筹码（输出） + 使用黄卡（= 手数） -->
+        <!-- 第二行：使用黄卡（= 手数） + 剩余黄卡（互斥，各占一半） -->
         <div class="wc-row2">
-            <div class="wc-total-bar">
-                <span class="wc-k">筹码</span>
-                <span><span class="wc-v" id="wcChipTotal">0</span></span>
-            </div>
             <div class="wc-hands" id="wcHandsBox">
                 <span class="wc-hands-label">使用黄卡</span>
                 <input type="number" id="wcHands" step="1" placeholder="0">
             </div>
-        </div>
-        <div class="wc-err" id="wcHandsErr">黄卡张数必须为整数（正整数或负整数）</div>
-
-        <!-- 第三行：剩余黄卡（与使用黄卡互斥） -->
-        <div class="wc-row2">
             <div class="wc-hands">
                 <span class="wc-hands-label">剩余黄卡</span>
                 <input type="number" id="wcLeft" step="1" placeholder="7" class="wc-mini">
+            </div>
+        </div>
+        <div class="wc-err" id="wcHandsErr">黄卡张数必须为整数（正整数或负整数）</div>
+
+        <!-- 第三行：筹码（输出，整行） -->
+        <div class="wc-row2">
+            <div class="wc-total-bar">
+                <span class="wc-k">筹码</span>
+                <span><span class="wc-v" id="wcChipTotal">0</span></span>
             </div>
         </div>
         <div class="wc-tip" id="wcDeductInfo">1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，使用黄卡 + 剩余黄卡 = 7 张</div>
