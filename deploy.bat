@@ -58,9 +58,10 @@ if %errorlevel% neq 0 (
     echo [提示] 没有需要提交的更改，或提交失败
 )
 
-REM 5. 推送
+REM 5. 推送（绕过凭据 helper，避免交互卡死；token 已内嵌在远端地址里）
 echo [4/4] 正在推送到 GitHub ...
-git push
+set GIT_TERMINAL_PROMPT=0
+git -c credential.helper= push origin main
 if %errorlevel% neq 0 (
     echo.
     echo [错误] 推送失败，请检查网络或 GitHub 授权是否过期
