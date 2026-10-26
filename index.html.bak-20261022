@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>水上俱乐部 · 结算工具</title>
+<style>
+* {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-appearance: none;
+        }
+        body {
+            max-width: 580px;
+            margin: 20px auto;
+            padding: 0 15px;
+            background: #eef5ff;
+            -webkit-text-size-adjust: 100%;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+            border: 1px solid #d6e8ff;
+        }
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #2b85ff;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #c8e0ff;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.2s;
+            background: #f9fcff;
+            -webkit-border-radius: 8px;
+        }
+        input:focus {
+            border-color: #2b85ff;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(43, 133, 255, 0.15);
+            -webkit-box-shadow: 0 0 0 3px rgba(43, 133, 255, 0.15);
+        }
+        input:disabled {
+            background: #f1f1f1 !important;
+            color: #888 !important;
+            border-color: #ddd !important;
+            -webkit-text-fill-color: #888 !important;
+            opacity: 1 !important;
+        }
+        input::placeholder {
+            color: #999;
+            opacity: 1;
+        }
+        input::-webkit-input-placeholder {
+            color: #999;
+        }
+
+        /* 🔴 核心修复1：彻底隐藏数字输入框上下箭头（全浏览器兼容） */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+            display: none;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+.btn-box {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            -webkit-box-flex: 1;
+            -ms-flex: 1;
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            -webkit-border-radius: 8px;
+            -webkit-appearance: none;
+        }
+        #resetBtn {
+            background: #2b85ff;
+            color: #fff;
+        }
+        #resetBtn:hover, #resetBtn:active {
+            background: #1a75e6;
+        }
+
+        /* 说明区微信适配 */
+        .info {
+            margin-top: 24px;
+            padding: 16px;
+            background: linear-gradient(to right, #f0f7ff, #e6f2ff);
+            border-left: 5px solid #2b85ff;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #222;
+            -webkit-border-radius: 8px;
+        }
+        .info strong {
+            color: #2b85ff;
+            font-size: 14px;
+        }
+        .info span {
+            color: #ff6b35;
+            font-weight: bold;
+        }
+/* ==========================================================
+           新增：水上俱乐部 积分结算模块
+           规则：筹码总值 → 扣手数 → 积分（÷2000）→ 向下取整决算
+           ========================================================== */
+        .wc-section {
+            background: -webkit-linear-gradient(top, #f2f8ff 0%, #fbfdff 100%);
+            background: linear-gradient(180deg, #f2f8ff 0%, #fbfdff 100%);
+            border: 1px solid #d9e9ff;
+            border-radius: 14px;
+            padding: 13px 13px 12px;
+            margin-bottom: 22px;
+            box-shadow: 0 3px 12px rgba(43, 133, 255, 0.10);
+            -webkit-border-radius: 14px;
+        }
+        .wc-header {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed #d6e8ff;
+        }
+        /* 标题：左侧装饰竖条 + 文字，占满左侧一半空间 */
+        .wc-title-wrap {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            gap: 6px;
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 0;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+        .wc-title-bar {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 3px;
+            flex: 0 0 3px;
+            width: 3px;
+            height: 15px;
+            border-radius: 3px;
+            background: -webkit-linear-gradient(top, #2b85ff, #6fb2ff);
+            background: linear-gradient(180deg, #2b85ff, #6fb2ff);
+        }
+        .wc-header h3 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: bold;
+            color: #1f6fd0;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* 标题行中间的昵称输入框：小尺寸，不随文字伸缩 */
+        .wc-nick {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 88px;
+            flex: 0 0 88px;
+            width: 88px;
+            min-width: 88px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 400;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .wc-nick:focus {
+            box-shadow: 0 0 0 2px rgba(43, 133, 255, 0.15);
+            -webkit-box-shadow: 0 0 0 2px rgba(43, 133, 255, 0.15);
+        }
+        /* 右侧占位栏：与左栏等宽，保证昵称框正好落在标题行正中 */
+        .wc-badge-box {
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 0;
+            flex: 1 1 0;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-pack: end;
+            -ms-flex-pack: end;
+            justify-content: flex-end;
+            min-width: 0;
+        }
+        .wc-badge {
+            font-size: 11px;
+            color: #1f6fd0;
+            background: #e6f2ff;
+            border: 1px solid #cfe4ff;
+            border-radius: 10px;
+            padding: 3px 9px;
+            font-weight: 600;
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+
+        /* 7 个面额：宽屏一行 7 个，窄屏自动变 4+3 两行 */
+        .wc-chips {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 560px) {
+            .wc-chips {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+        .wc-chip {
+            min-width: 0;
+            text-align: center;
+            background: #ffffff;
+            border: 1px solid #eaf2fd;
+            border-radius: 10px;
+            padding: 6px 3px 7px;
+            -webkit-border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(43, 133, 255, 0.06);
+        }
+        /* 每个面额卡片用对应色的极淡底色，一眼区分 */
+        .wc-chip.wc-gold   { background: #fffdf3; border-color: #f5e7bb; }
+        .wc-chip.wc-orange { background: #fff8f1; border-color: #fadfbe; }
+        .wc-chip.wc-black  { background: #f7f8f9; border-color: #e2e6ea; }
+        .wc-chip.wc-pink   { background: #fff5f9; border-color: #f8d6e6; }
+        .wc-chip.wc-purple { background: #fbf5fd; border-color: #e9d4f2; }
+        .wc-chip.wc-blue   { background: #f4f9ff; border-color: #d4e6fb; }
+        .wc-chip.wc-green  { background: #f4fbf5; border-color: #d3eed7; }
+        .wc-chip label {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            gap: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            white-space: nowrap;
+        }
+        .wc-chip input {
+            text-align: center !important;
+            padding: 8px 2px;
+            font-size: 14px;
+            background: #ffffff;
+            -webkit-text-align: center !important;
+        }
+
+        /* 筹码小球：纯 CSS 径向渐变绘制，粉色球也在其中 */
+        .ball {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            display: inline-block;
+            -ms-flex-negative: 0;
+            flex-shrink: 0;
+            background-image: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.92), rgba(255,255,255,0) 58%);
+        }
+        .ball-gold   { background-color: #e8b10a; box-shadow: inset 0 0 0 1px #c29600; }
+        .ball-orange { background-color: #f57c00; box-shadow: inset 0 0 0 1px #cc6600; }
+        .ball-black  { background-color: #212121; box-shadow: inset 0 0 0 1px #000000; }
+        .ball-pink   { background-color: #f06fae; box-shadow: inset 0 0 0 1px #cc5a93; }
+        .ball-purple { background-color: #8e24aa; box-shadow: inset 0 0 0 1px #6a1b9a; }
+        .ball-blue   { background-color: #1976d2; box-shadow: inset 0 0 0 1px #0d47a1; }
+        .ball-green  { background-color: #2e9e46; box-shadow: inset 0 0 0 1px #1b5e20; }
+
+        /* 面额文字配色 */
+        .wc-gold   label { color: #b8890a; }
+        .wc-orange label { color: #d96a00; }
+        .wc-black  label { color: #212121; }
+        .wc-pink   label { color: #d4537e; }
+        .wc-purple label { color: #7b1fa2; }
+        .wc-blue   label { color: #1976d2; }
+        .wc-green  label { color: #2e7d32; }
+
+        /* 第二行：筹码总值（输出） + 补购卡张数（输入，= 手数）并排 */
+        .wc-row2 {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+        }
+        .wc-row2 > * {
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 150px;
+            flex: 1 1 150px;
+        }
+        .wc-total-bar {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+            justify-content: space-between;
+            background: -webkit-linear-gradient(top, #eef5ff, #e4f0ff);
+            background: linear-gradient(180deg, #eef5ff, #e4f0ff);
+            border: 1px solid #a9cdf7;
+            border-radius: 9px;
+            padding: 8px 12px;
+            margin-bottom: 0;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+            -webkit-border-radius: 9px;
+        }
+        .wc-total-bar .wc-k {
+            font-size: 12px;
+            font-weight: 600;
+            color: #2b85ff;
+            white-space: nowrap;
+        }
+        .wc-total-bar .wc-v {
+            font-size: 21px;
+            font-weight: bold;
+            color: #1f6fd0;
+            letter-spacing: 0.5px;
+            font-variant-numeric: tabular-nums;
+        }
+        .wc-unit {
+            font-size: 11px;
+            font-weight: 600;
+            color: #7fa8e0;
+            margin-left: 3px;
+        }
+
+        /* 结果小卡片网格 */
+        .wc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .wc-card {
+            background: #ffffff;
+            border: 1px solid #e3eefc;
+            border-radius: 10px;
+            padding: 9px 10px;
+            -webkit-border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(43, 133, 255, 0.07);
+        }
+        .wc-card .wc-k {
+            font-size: 11px;
+            color: #7a8ba3;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .wc-card .wc-v {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2d3d;
+            letter-spacing: 0.3px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 补购卡张数 / 剩余张数 / 目标输入块 */
+        .wc-hands {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            gap: 6px;
+            background: #ffffff;
+            border: 1px solid #d7e5f8;
+            border-radius: 9px;
+            padding: 6px 8px;
+            margin-bottom: 0;
+            -webkit-border-radius: 9px;
+            box-shadow: 0 1px 4px rgba(43, 133, 255, 0.07);
+            -ms-flex-wrap: wrap;
+            flex-wrap: wrap;
+        }
+        /* 第三行（剩余张数 / 目标）需要更宽的基准，窄屏自动换行 */
+        .wc-row3 > * {
+            -ms-flex: 1 1 190px;
+            flex: 1 1 190px;
+        }
+        .wc-hands-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #455a75;
+            white-space: nowrap;
+            margin-right: auto;
+        }
+        #wcHands {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 52px;
+            flex: 0 0 52px;
+            width: 52px;
+            padding: 7px 2px;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .wc-step {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 27px;
+            flex: 0 0 27px;
+            width: 27px;
+            height: 29px;
+            padding: 0;
+            font-size: 16px;
+            line-height: 1;
+            font-weight: 600;
+            background: #eef5ff;
+            color: #2b85ff;
+            border: 1px solid #c8e0ff;
+            border-radius: 6px;
+        }
+        .wc-step:hover, .wc-step:active {
+            background: #dbeaff;
+        }
+        .wc-hands.is-error {
+            border-color: #e53935;
+            background: #fff6f6;
+        }
+        .wc-err {
+            display: none;
+            font-size: 11px;
+            color: #e53935;
+            margin: 4px 0 0 2px;
+            font-weight: 600;
+        }
+        .wc-err.show {
+            display: block;
+        }
+        /* 净端口径提示小字 */
+        .wc-tip {
+            font-size: 11px;
+            color: #8fa3ba;
+            margin: 6px 0 10px 2px;
+            line-height: 1.5;
+        }
+        .wc-tip b {
+            color: #2b85ff;
+            font-weight: 600;
+        }
+
+        /* 结果区小标题 */
+        .wc-sub {
+            font-size: 11px;
+            font-weight: 600;
+            color: #a06a2c;
+            margin: 2px 0 6px 2px;
+            letter-spacing: 0.3px;
+        }
+        .wc-sub-money {
+            color: #b0261e;
+            margin-top: 10px;
+        }
+        /* 两列结果：精确积分 + 决算积分 */
+        .wc-grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        /* 所有结果数值居中显示 */
+        .wc-card .wc-v {
+            text-align: center;
+        }
+        /* 剩余张数 / 归还目标里的小输入框 */
+        .wc-mini {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 52px;
+            flex: 0 0 52px;
+            width: 52px;
+            padding: 7px 2px;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .wc-mini-wide {
+            -ms-flex: 0 0 78px;
+            flex: 0 0 78px;
+            width: 78px;
+            font-size: 13px;
+        }
+        .wc-sep {
+            font-size: 12px;
+            color: #8fa3ba;
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+        }
+
+        /* 积分结算结果区：橙色高亮 */
+        .wc-final .wc-card {
+            background: -webkit-linear-gradient(top, #fffaf1, #fff6e8);
+            background: linear-gradient(180deg, #fffaf1, #fff6e8);
+            border-color: #ffd9a0;
+            border-left: 3px solid #ffab4a;
+            box-shadow: 0 2px 6px rgba(230, 81, 0, 0.10);
+        }
+        .wc-final .wc-card .wc-k {
+            color: #a06a2c;
+        }
+        .wc-final .wc-card .wc-v {
+            color: #e65100;
+            font-size: 20px;
+        }
+        /* 决算主结果：数字更大更醒目 */
+        .wc-final .wc-card-main {
+            background: -webkit-linear-gradient(top, #fff6e6, #ffefd6);
+            background: linear-gradient(180deg, #fff6e6, #ffefd6);
+            border-color: #ffc178;
+            border-left: 4px solid #ff9100;
+            box-shadow: 0 2px 8px rgba(230, 81, 0, 0.14);
+        }
+        .wc-final .wc-card-main .wc-k {
+            color: #8a4b12;
+            font-size: 12px;
+        }
+        .wc-final .wc-card-main .wc-v {
+            font-size: 26px;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        /* 补购卡（黄卡）结算区：红金配色，和积分区区分开 */
+        .wc-money .wc-card {
+            background: #fffaf9;
+            border-color: #f7d9d2;
+            box-shadow: 0 1px 4px rgba(176, 38, 30, 0.07);
+        }
+        .wc-money .wc-card .wc-k {
+            color: #a05242;
+        }
+        .wc-money .wc-card .wc-v {
+            color: #b0261e;
+            font-size: 17px;
+        }
+        .wc-money .wc-card-pay {
+            background: -webkit-linear-gradient(top, #fff1ea, #ffe4d6);
+            background: linear-gradient(180deg, #fff1ea, #ffe4d6);
+            border-color: #f3b49f;
+            border-left: 4px solid #e53935;
+            box-shadow: 0 2px 8px rgba(229, 57, 53, 0.14);
+        }
+        .wc-money .wc-card-pay .wc-k {
+            color: #8c2b1c;
+            font-size: 12px;
+        }
+        .wc-money .wc-card-pay .wc-v {
+            font-size: 24px;
+        }
+        /* 状态色：无需补款显示绿色 */
+        .wc-money .wc-card.is-ok .wc-v {
+            color: #2e9e46;
+        }
+        /* 独立页微调：模块占满整页 */
+        .wc-section {
+            margin-bottom: 4px;
+        }
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>🏊 水上俱乐部</h2>
+<!-- ========== 新增模块：水上俱乐部 积分结算 ========== -->
+    <div class="wc-section">
+        <div class="wc-header">
+            <div class="wc-title-wrap">
+                <span class="wc-title-bar"></span>
+                <h3 id="wcTitle">水上俱乐部</h3>
+            </div>
+            <input type="text" id="wcNickname" class="wc-nick" placeholder="可输入昵称" maxlength="12">
+            <span class="wc-badge-box"><span class="wc-badge">积分结算</span></span>
+        </div>
+
+        <!-- 7 个面额：常用小面额在前，大面额在后 -->
+        <div class="wc-chips">
+            <div class="wc-chip wc-black">
+                <label><i class="ball ball-black"></i>1W</label>
+                <input type="number" id="wc1w" min="0" step="1" placeholder="">
+            </div>
+            <div class="wc-chip wc-pink">
+                <label><i class="ball ball-pink"></i>5000</label>
+                <input type="number" id="wc5000" min="0" step="1" placeholder="">
+            </div>
+            <div class="wc-chip wc-purple">
+                <label><i class="ball ball-purple"></i>1000</label>
+                <input type="number" id="wc1000" min="0" step="1" placeholder="">
+            </div>
+            <div class="wc-chip wc-blue">
+                <label><i class="ball ball-blue"></i>500</label>
+                <input type="number" id="wc500" min="0" step="1" placeholder="">
+            </div>
+            <div class="wc-chip wc-green">
+                <label><i class="ball ball-green"></i>100</label>
+                <input type="number" id="wc100" min="0" step="1" placeholder="">
+            </div>
+            <div class="wc-chip wc-gold">
+                <label><i class="ball ball-gold"></i>10W</label>
+                <input type="number" id="wc10w" min="0" step="1" placeholder="">
+            </div>
+            <div class="wc-chip wc-orange">
+                <label><i class="ball ball-orange"></i>5W</label>
+                <input type="number" id="wc5w" min="0" step="1" placeholder="">
+            </div>
+        </div>
+
+        <!-- 第二行：筹码总值（输出） + 补购卡张数（= 手数） -->
+        <div class="wc-row2">
+            <div class="wc-total-bar">
+                <span class="wc-k">筹码总值</span>
+                <span><span class="wc-v" id="wcChipTotal">0</span><span class="wc-unit">筹码</span></span>
+            </div>
+            <div class="wc-hands" id="wcHandsBox">
+                <span class="wc-hands-label">补购卡</span>
+                <button type="button" class="wc-step" data-step="-1">−</button>
+                <input type="number" id="wcHands" step="1" placeholder="0">
+                <button type="button" class="wc-step" data-step="1">＋</button>
+            </div>
+        </div>
+        <div class="wc-err" id="wcHandsErr">补购卡张数必须为整数（正整数或负整数）</div>
+
+        <!-- 第三行：剩余张数（与补购卡张数互斥） + 归还目标（张数/筹码二选一） -->
+        <div class="wc-row2 wc-row3">
+            <div class="wc-hands">
+                <span class="wc-hands-label">剩余张数</span>
+                <input type="number" id="wcLeft" step="1" placeholder="7" class="wc-mini">
+            </div>
+            <div class="wc-hands">
+                <span class="wc-hands-label">目标</span>
+                <input type="number" id="wcTargetCards" step="1" placeholder="7" class="wc-mini">
+                <span class="wc-sep">张 =</span>
+                <input type="number" id="wcTargetChips" step="10000" placeholder="140000" class="wc-mini wc-mini-wide">
+                <span class="wc-sep">筹码</span>
+            </div>
+        </div>
+        <div class="wc-tip" id="wcDeductInfo">1 张补购卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，补购卡张数 + 剩余张数 = 归还目标张数</div>
+
+        <!-- 积分结算结果（已扣补购卡后的净值） -->
+        <div class="wc-sub">🏅 积分决算 · 已扣补购卡</div>
+        <div class="wc-grid wc-final wc-grid-2">
+            <div class="wc-card">
+                <div class="wc-k">积分结算</div>
+                <div class="wc-v" id="wcPoints">0.0000</div>
+            </div>
+            <div class="wc-card wc-card-main">
+                <div class="wc-k">取整数倍</div>
+                <div class="wc-v" id="wcFloor">0</div>
+            </div>
+        </div>
+
+        <!-- 补购卡（黄卡）结算：还差多少筹码 → 应付多少钱 -->
+        <div class="wc-sub wc-sub-money">💰 补购卡结算 · 每手（2W）10 元</div>
+        <div class="wc-grid wc-money">
+            <div class="wc-card">
+                <div class="wc-k">需还筹码</div>
+                <div class="wc-v" id="wcNeedChips">0</div>
+            </div>
+            <div class="wc-card">
+                <div class="wc-k">还差筹码</div>
+                <div class="wc-v" id="wcGapChips">0</div>
+            </div>
+            <div class="wc-card wc-card-pay" id="wcPayCard">
+                <div class="wc-k">应付金额</div>
+                <div class="wc-v" id="wcPayMoney">¥0</div>
+            </div>
+        </div>
+        <div class="wc-tip" id="wcMoneyInfo">每缺 1 手（2W 筹码）需付 10 元，不足 1 手按 1 手计算</div>
+    </div>
+    <div class="btn-box">
+        <button id="wcResetBtn">重置所有</button>
+    </div>
+
+    <div class="info">
+        <strong>🏊 结算规则：</strong><br>
+        筹码总值 = 10000×a + 5000×b + 1000×c + 500×d + 100×e + 100000×f + 50000×g<br>
+        净筹码 = 筹码总值 − 补购卡张数 × 20000<br>
+        积分 = 净筹码 ÷ 2000，<span>向下取整（取整数倍）即为最终决算分</span><br>
+        补购卡张数 + 剩余张数 = 目标张数（默认 7 张 = 14W 筹码）<br>
+        还差筹码 = 补购卡张数 × 20000 − 筹码总值<br>
+        <span>每缺 1 手（2W 筹码）付 10 元，不足 1 手按 1 手算</span><br><br>
+        <strong>💡 使用说明：</strong><br>
+        补购卡张数与剩余张数互斥，填一个另一个自动算<br>
+        归还目标张数与筹码二选一，填一个另一个自动算<br>
+        张数可为负整数（表示加回 / 退卡）<br>
+        昵称实时显示在标题上，不做存储，刷新即清空<br>
+        按 Enter 快捷计算，点击「重置所有」恢复默认 7 张 / 14W
+    </div>
+</div>
+
+<script>
+/* ==================== 水上俱乐部：配置区 ==================== */
+    // 面额配置：顺序与页面显示顺序一致（1W → 5000 → 1000 → 500 → 100 → 10W → 5W）
+    // 面额顺序与页面输入框排列一致：1W → 5000 → 1000 → 500 → 100 → 10W → 5W
+    const WC_CHIPS = [
+        { id: 'wc1w',   value: 10000  },
+        { id: 'wc5000', value: 5000   },
+        { id: 'wc1000', value: 1000   },
+        { id: 'wc500',  value: 500    },
+        { id: 'wc100',  value: 100    },
+        { id: 'wc10w',  value: 100000 },
+        { id: 'wc5w',   value: 50000  }
+    ];
+    const WC_POINT_UNIT = 2000;                                  // 多少筹码 = 1 积分
+    const WC_HAND_CHIPS = 20000;                                 // 1 手 = 1 张补购卡 = 2W 筹码
+    const WC_HAND_POINTS = WC_HAND_CHIPS / WC_POINT_UNIT;        // 1 手 = 10 积分
+    const WC_HAND_MONEY = 10;                                    // 每缺 1 手需付 10 元
+    const WC_DEFAULT_CARDS = 7;                                  // 默认归还目标：7 张
+    const WC_DEFAULT_TARGET = WC_DEFAULT_CARDS * WC_HAND_CHIPS;  // 默认归还目标：14W 筹码
+
+    // 批量取得水上俱乐部相关 DOM
+    const wcInputs = WC_CHIPS.map(function (c) {
+        return document.getElementById(c.id);
+    });
+    const wcChipTotalEl = document.getElementById('wcChipTotal');
+    const wcPointsEl = document.getElementById('wcPoints');
+    const wcFloorEl = document.getElementById('wcFloor');
+    const wcHandsInput = document.getElementById('wcHands');
+    const wcHandsBox = document.getElementById('wcHandsBox');
+    const wcHandsErr = document.getElementById('wcHandsErr');
+    const wcLeftInput = document.getElementById('wcLeft');
+    const wcTargetCardsInput = document.getElementById('wcTargetCards');
+    const wcTargetChipsInput = document.getElementById('wcTargetChips');
+    const wcNeedChipsEl = document.getElementById('wcNeedChips');
+    const wcGapChipsEl = document.getElementById('wcGapChips');
+    const wcPayMoneyEl = document.getElementById('wcPayMoney');
+    const wcPayCard = document.getElementById('wcPayCard');
+    const wcMoneyInfo = document.getElementById('wcMoneyInfo');
+    const wcDeductInfo = document.getElementById('wcDeductInfo');
+    const wcTitleEl = document.getElementById('wcTitle');
+    const wcNicknameInput = document.getElementById('wcNickname');
+
+    // 微信兼容格式化
+    function format(num) {
+        const n = parseFloat(num) || 0;
+        return n.toFixed(4);
+    }
+
+    // 整数展示：处理 -0 这种尴尬值
+    function intText(n) {
+        if (n === 0) {
+            return '0';
+        }
+        return String(n);
+    }
+
+    // 积分展示：保留 2 位小数，四舍五入
+    // 负数按绝对值四舍五入（-4.655 → -4.66），极小值归零避免出现 -0.00
+    function pointsText(n) {
+        const sign = n < 0 ? -1 : 1;
+        let v = sign * Math.round(Math.abs(n) * 100 + 1e-9) / 100;
+        if (Math.abs(v) < 0.005) {
+            v = 0;
+        }
+        return v.toFixed(2);
+    }
+
+    // 读取某个筹码数量：空值/非法值/负数一律按 0 处理，小数向下取整
+    function readChipCount(el) {
+        let n = parseInt(el.value, 10);
+        if (isNaN(n) || n < 0) {
+            n = 0;
+        }
+        return n;
+    }
+
+    // 读取整数：空值按 0，非法值返回 null
+    function readInt(el) {
+        const raw = (el.value || '').trim();
+        if (raw === '') {
+            return 0;
+        }
+        if (!/^[+-]?\d+$/.test(raw)) {
+            return null;
+        }
+        const n = parseInt(raw, 10);
+        return isNaN(n) ? null : n;
+    }
+
+    // 当前归还目标（张数为准，筹码 = 张数 × 2W）
+    function readTargetCards() {
+        const cards = readInt(wcTargetCardsInput);
+        return (cards === null || cards < 0) ? WC_DEFAULT_CARDS : cards;
+    }
+
+    // 补购卡张数 → 剩余张数（互斥：两者相加 = 目标张数）
+    function syncLeftFromHands() {
+        const hands = readInt(wcHandsInput);
+        if (hands === null) {
+            return;
+        }
+        wcLeftInput.value = readTargetCards() - hands;
+    }
+
+    // 剩余张数 → 补购卡张数（互斥，反推）
+    function syncHandsFromLeft() {
+        const left = readInt(wcLeftInput);
+        if (left === null) {
+            return;
+        }
+        wcHandsInput.value = readTargetCards() - left;
+    }
+
+    // 目标张数 → 目标筹码（同步回填）
+    function syncTargetFromCards() {
+        const cards = readTargetCards();
+        wcTargetChipsInput.value = cards * WC_HAND_CHIPS;
+    }
+
+    // 目标筹码 → 目标张数（四舍五入到整张，输完再回填筹码避免打断输入）
+    function syncTargetFromChips(fillBack) {
+        const chips = readInt(wcTargetChipsInput);
+        if (chips === null || chips < 0) {
+            return;
+        }
+        const cards = Math.round(chips / WC_HAND_CHIPS);
+        wcTargetCardsInput.value = cards;
+        if (fillBack) {
+            wcTargetChipsInput.value = cards * WC_HAND_CHIPS;
+        }
+    }
+
+    // 核心：水上俱乐部结算（积分 + 补购卡现金）
+    // 口径：净筹码 = 筹码总值 − 补购卡张数×2W → 积分 = 净筹码÷2000 → 向下取整
+    function calcWaterClub() {
+        // 1. 累加筹码总值（毛值）
+        let total = 0;
+        WC_CHIPS.forEach(function (chip, index) {
+            total += readChipCount(wcInputs[index]) * chip.value;
+        });
+        wcChipTotalEl.textContent = intText(total);
+
+        // 2. 补购卡张数校验：允许空、正整数、负整数、0；不允许小数和乱填
+        const hands = readInt(wcHandsInput);
+
+        if (hands === null) {
+            wcHandsBox.classList.add('is-error');
+            wcHandsErr.classList.add('show');
+            wcPointsEl.textContent = '—';
+            wcFloorEl.textContent = '—';
+            wcNeedChipsEl.textContent = '—';
+            wcGapChipsEl.textContent = '—';
+            wcPayMoneyEl.textContent = '—';
+            wcMoneyInfo.innerHTML = '请先填写正确的补购卡张数（整数）';
+            return;
+        }
+
+        wcHandsBox.classList.remove('is-error');
+        wcHandsErr.classList.remove('show');
+
+        // 3. 积分：净筹码 → 积分 → 向下取整（即最终决算分）
+        const netChips = total - hands * WC_HAND_CHIPS;
+        const points = netChips / WC_POINT_UNIT;
+        // 积分显示保留 2 位小数（四舍五入），决算分仍向下取整
+        wcPointsEl.textContent = pointsText(points);
+        wcFloorEl.textContent = intText(Math.floor(points));
+
+        // 4. 补购卡现金结算：需还 = 张数×2W，还差 = 需还 − 手上筹码
+        const needChips = hands * WC_HAND_CHIPS;
+        const gapChips = Math.max(0, needChips - total);        // 筹码不够的部分
+        const gapHands = Math.ceil(gapChips / WC_HAND_CHIPS);   // 不足 1 手按 1 手算
+        const payMoney = gapHands * WC_HAND_MONEY;
+
+        wcNeedChipsEl.textContent = intText(needChips);
+        wcGapChipsEl.textContent = intText(gapChips);
+        wcPayMoneyEl.textContent = '¥' + intText(payMoney);
+
+        if (gapChips > 0) {
+            wcPayCard.classList.remove('is-ok');
+            wcMoneyInfo.innerHTML = '还差 <b>' + intText(gapChips) + '</b> 筹码 = <b>' +
+                gapHands + '</b> 手（不足 1 手按 1 手）→ 应付 <b>¥' + payMoney + '</b>';
+        } else {
+            wcPayCard.classList.add('is-ok');
+            const extra = total - needChips;
+            wcMoneyInfo.innerHTML = (hands === 0 ? '未使用补购卡，' : '已还清 ') +
+                '无需补款' + (extra > 0 ? '，多余 <b>' + intText(extra) + '</b> 筹码' : '');
+        }
+
+        // 5. 提示小字：告诉用户补购卡到底折了多少筹码
+        if (hands === 0) {
+            wcDeductInfo.innerHTML = '1 张补购卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，' +
+                '补购卡张数 + 剩余张数 = <b>' + readTargetCards() + '</b> 张';
+        } else {
+            const chips = Math.abs(hands) * WC_HAND_CHIPS;
+            wcDeductInfo.innerHTML = '已' + (hands > 0 ? '扣除' : '加回') + ' <b>' +
+                Math.abs(hands) + '</b> 张（手）= <b>' + intText(chips) +
+                '</b> 筹码，剩余张数 <b>' + intText(readTargetCards() - hands) + '</b>';
+        }
+    }
+
+    // 昵称：仅作输入展示，不拼接到标题，不做任何存储，刷新即清空
+    function updateNickname() {
+        // 按需求去除：昵称不再显示在标题上
+    }
+
+    // 清空水上俱乐部（重置时用）：恢复默认目标 7 张 / 14W
+    function clearWaterClub() {
+        wcInputs.forEach(function (el) {
+            el.value = '';
+        });
+        wcHandsInput.value = '';
+        wcNicknameInput.value = '';
+        wcTargetCardsInput.value = WC_DEFAULT_CARDS;
+        wcTargetChipsInput.value = WC_DEFAULT_TARGET;
+        wcLeftInput.value = WC_DEFAULT_CARDS;
+        updateNickname();
+        calcWaterClub();
+    }
+/* ==================== 水上俱乐部：事件绑定 ==================== */
+    wcInputs.forEach(function (el) {
+        el.addEventListener('input', calcWaterClub);
+        el.addEventListener('change', calcWaterClub);
+        el.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                calcWaterClub();
+                el.blur();
+            }
+        });
+    });
+
+    // 昵称输入：实时更新标题（不存储）
+    wcNicknameInput.addEventListener('input', updateNickname);
+    wcNicknameInput.addEventListener('change', updateNickname);
+    wcNicknameInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            wcNicknameInput.blur();
+        }
+    });
+
+    // 补购卡张数：变化时同步剩余张数（互斥）
+    function onHandsChange() {
+        syncLeftFromHands();
+        calcWaterClub();
+    }
+    wcHandsInput.addEventListener('input', onHandsChange);
+    wcHandsInput.addEventListener('change', onHandsChange);
+    wcHandsInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            onHandsChange();
+            wcHandsInput.blur();
+        }
+    });
+
+    // 剩余张数：变化时反推补购卡张数（互斥）
+    function onLeftChange(fillBack) {
+        syncHandsFromLeft();
+        if (fillBack) {
+            syncLeftFromHands();
+        }
+        calcWaterClub();
+    }
+    wcLeftInput.addEventListener('input', function () {
+        onLeftChange(false);
+    });
+    wcLeftInput.addEventListener('change', function () {
+        onLeftChange(true);
+    });
+    wcLeftInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            onLeftChange(true);
+            wcLeftInput.blur();
+        }
+    });
+
+    // 归还目标：填张数自动算筹码（二选一）
+    function onTargetCardsChange() {
+        syncTargetFromCards();
+        syncLeftFromHands();
+        calcWaterClub();
+    }
+    wcTargetCardsInput.addEventListener('input', onTargetCardsChange);
+    wcTargetCardsInput.addEventListener('change', onTargetCardsChange);
+    wcTargetCardsInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            onTargetCardsChange();
+            wcTargetCardsInput.blur();
+        }
+    });
+
+    // 归还目标：填筹码自动算张数（输入时不回填，输完/回车再对齐）
+    function onTargetChipsChange(fillBack) {
+        syncTargetFromChips(fillBack);
+        syncLeftFromHands();
+        calcWaterClub();
+    }
+    wcTargetChipsInput.addEventListener('input', function () {
+        onTargetChipsChange(false);
+    });
+    wcTargetChipsInput.addEventListener('change', function () {
+        onTargetChipsChange(true);
+    });
+    wcTargetChipsInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            onTargetChipsChange(true);
+            wcTargetChipsInput.blur();
+        }
+    });
+
+    // 补购卡加减按钮：手机上没有负号键也能填负数
+    document.querySelectorAll('.wc-step').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const step = parseInt(btn.getAttribute('data-step'), 10) || 0;
+            let current = parseInt(wcHandsInput.value, 10);
+            if (isNaN(current)) {
+                current = 0;
+            }
+            wcHandsInput.value = current + step;
+            onHandsChange();
+        });
+    });
+
+    /* ===== 独立页专属：重置按钮 + 初始化（源页面的 resetBtn 不在这里） ===== */
+    document.getElementById('wcResetBtn').addEventListener('click', function () {
+        clearWaterClub();
+    });
+
+    window.onload = function () {
+        clearWaterClub();
+    };
+</script>
+</body>
+</html>

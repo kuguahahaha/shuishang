@@ -686,7 +686,7 @@
         </div>
 
         <!-- 黄卡（黄卡）结算：还差多少筹码 → 应付多少钱 -->
-        <div class="wc-sub wc-sub-money">💰 黄卡结算 · 每手（2W）10 元</div>
+        <div class="wc-sub wc-sub-money">💰 黄卡结算 · 抵不掉每张 10 元</div>
         <div class="wc-grid wc-money">
             <div class="wc-card">
                 <div class="wc-k">需还筹码</div>
@@ -701,7 +701,7 @@
                 <div class="wc-v" id="wcPayMoney">¥0</div>
             </div>
         </div>
-        <div class="wc-tip" id="wcMoneyInfo">每缺 1 手（2W 筹码）需付 10 元，不足 1 手按 1 手计算</div>
+        <div class="wc-tip" id="wcMoneyInfo">手上筹码先按整张卡抵扣，抵不掉的每张黄卡付 10 元</div>
     </div>
     <div class="btn-box">
         <button id="wcResetBtn">重置所有</button>
@@ -710,11 +710,13 @@
     <div class="info">
         <strong>🏊 结算规则：</strong><br>
         筹码 = 10000×a + 5000×b + 1000×c + 500×d + 100×e + 100000×f + 50000×g<br>
-        净筹码 = 筹码 − 黄卡张数 × 20000<br>
         积分 = 净筹码 ÷ 2000，<span>向下取整（取整数倍）即为最终决算分</span><br>
         使用黄卡 + 剩余黄卡 = 7 张（= 14W 筹码）<br>
-        还差筹码 = 黄卡张数 × 20000 − 筹码<br>
-        <span>每缺 1 手（2W 筹码）付 10 元，不足 1 手按 1 手算</span><br><br>
+        已抵扣 = min(使用黄卡张数, 筹码 ÷ 20000 向下取整) × 20000（手上筹码先按整张卡抵扣）<br>
+        净筹码 = 筹码 − 已抵扣<br>
+        需还筹码 = 使用黄卡张数 × 20000<br>
+        还差筹码 = 需还筹码 − 已抵扣（整张卡计）<br>
+        <span>抵不掉的每张黄卡付 10 元</span><br><br>
         <strong>💡 使用说明：</strong><br>
         使用黄卡与剩余黄卡互斥，填一个另一个自动算<br>
         张数可为负整数（表示加回 / 退卡）<br>
@@ -834,7 +836,7 @@
     }
 
     // 核心：水上俱乐部结算（积分 + 黄卡现金）
-    // 口径：净筹码 = 筹码 − 黄卡张数×2W → 积分 = 净筹码÷2000 → 向下取整
+    // 口径：净筹码 = 筹码 − 已抵扣的整张卡（每张 2W）→ 积分 = 净筹码÷2000 → 向下取整（恒 ≥ 0）
     function calcWaterClub() {
         // 1. 累加筹码（毛值）
         let total = 0;
@@ -861,43 +863,49 @@
         wcHandsBox.classList.remove('is-error');
         wcHandsErr.classList.remove('show');
 
-        // 3. 积分：净筹码 → 积分 → 向下取整（即最终决算分）
-        const netChips = total - hands * WC_HAND_CHIPS;
+        // 3. 黄卡抵扣：手上筹码先按整张卡抵扣（1 张卡 = 2W 筹码）
+        //    场景一：没动黄卡 → 全额算积分，不还卡不收钱
+        //    场景二：筹码够抵 → 抵掉用掉的张数，剩余全是自己的
+        //    场景三：筹码不够抵 → 抵掉能抵的整张卡，抵不掉的部分每张 10 元
+        const cardsUsed = Math.max(0, hands);                              // 实际用掉的张数
+        const canOffset = Math.min(cardsUsed, Math.floor(total / WC_HAND_CHIPS));  // 手上筹码能抵几张
+        const offsetChips = canOffset * WC_HAND_CHIPS;                     // 已抵扣的筹码
+        const netChips = total - offsetChips;                              // 净筹码（恒 ≥ 0）
         const points = netChips / WC_POINT_UNIT;
         // 积分显示保留 2 位小数（四舍五入），决算分仍向下取整
         wcPointsEl.textContent = pointsText(points);
         wcFloorEl.textContent = intText(Math.floor(points));
 
-        // 4. 黄卡现金结算：需还 = 张数×2W，还差 = 需还 − 手上筹码
-        const needChips = hands * WC_HAND_CHIPS;
-        const gapChips = Math.max(0, needChips - total);        // 筹码不够的部分
-        const gapHands = Math.ceil(gapChips / WC_HAND_CHIPS);   // 不足 1 手按 1 手算
-        const payMoney = gapHands * WC_HAND_MONEY;
+        // 4. 黄卡现金结算：需还 = 用掉的张数×2W；抵不掉的部分每张 10 元
+        const needChips = cardsUsed * WC_HAND_CHIPS;      // 需还的筹码（用几张还几张）
+        const gapChips = needChips - offsetChips;         // 抵不掉的部分（整张卡计）
+        const gapCards = gapChips / WC_HAND_CHIPS;        // 需补买几张黄卡
+        const payMoney = gapCards * WC_HAND_MONEY;
 
         wcNeedChipsEl.textContent = intText(needChips);
         wcGapChipsEl.textContent = intText(gapChips);
         wcPayMoneyEl.textContent = '¥' + intText(payMoney);
 
-        if (gapChips > 0) {
+        if (gapCards > 0) {
             wcPayCard.classList.remove('is-ok');
-            wcMoneyInfo.innerHTML = '还差 <b>' + intText(gapChips) + '</b> 筹码 = <b>' +
-                gapHands + '</b> 手（不足 1 手按 1 手）→ 应付 <b>¥' + payMoney + '</b>';
+            wcMoneyInfo.innerHTML = '手上 <b>' + intText(total) + '</b> 筹码可抵 <b>' +
+                canOffset + '</b> 张，抵不掉 <b>' + gapCards + '</b> 张（<b>' +
+                intText(gapChips) + '</b> 筹码）→ 应付 <b>¥' + payMoney + '</b>';
         } else {
             wcPayCard.classList.add('is-ok');
-            const extra = total - needChips;
-            wcMoneyInfo.innerHTML = (hands === 0 ? '未使用黄卡，' : '已还清 ') +
-                '无需补款' + (extra > 0 ? '，多余 <b>' + intText(extra) + '</b> 筹码' : '');
+            const extra = netChips;
+            wcMoneyInfo.innerHTML = (cardsUsed === 0 ? '未使用黄卡，' : '黄卡已用筹码抵清，') +
+                '无需补款' + (extra > 0 ? '，净剩 <b>' + intText(extra) + '</b> 筹码' : '');
         }
-
-        // 5. 提示小字：告诉用户黄卡到底折了多少筹码
-        if (hands === 0) {
+        // 5. 提示小字：说明黄卡抵扣情况
+        if (cardsUsed === 0) {
             wcDeductInfo.innerHTML = '1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，' +
                 '使用黄卡 + 剩余黄卡 = <b>' + readTargetCards() + '</b> 张';
         } else {
-            const chips = Math.abs(hands) * WC_HAND_CHIPS;
-            wcDeductInfo.innerHTML = '已' + (hands > 0 ? '扣除' : '加回') + ' <b>' +
-                Math.abs(hands) + '</b> 张（手）= <b>' + intText(chips) +
-                '</b> 筹码，剩余黄卡 <b>' + intText(readTargetCards() - hands) + '</b>';
+            wcDeductInfo.innerHTML = '使用黄卡 <b>' + cardsUsed + '</b> 张，已抵扣 <b>' +
+                canOffset + '</b> 张（<b>' + intText(offsetChips) + '</b> 筹码），净剩 <b>' +
+                intText(netChips) + '</b> 筹码 = <b>' + intText(Math.floor(points)) +
+                '</b> 分，剩余黄卡 <b>' + intText(readTargetCards() - cardsUsed) + '</b>';
         }
     }
 
