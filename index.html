@@ -333,6 +333,42 @@
             -webkit-box-flex: 1;
             -ms-flex: 1 1 150px;
             flex: 1 1 150px;
+            min-width: 0;
+        }
+        /* 黄卡行（使用黄卡 / 剩余黄卡）：始终并排一行，窄屏也不换行 */
+        .wc-row-cards {
+            -ms-flex-wrap: nowrap;
+            flex-wrap: nowrap;
+            gap: 6px;
+        }
+        .wc-row-cards > * {
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 0;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+        .wc-row-cards .wc-hands {
+            -ms-flex-wrap: nowrap;
+            flex-wrap: nowrap;
+            padding: 5px 6px;
+            gap: 4px;
+        }
+        /* 窄屏下标签允许折成两行，保证两个输入框仍在一行 */
+        .wc-row-cards .wc-hands-label {
+            white-space: normal;
+            line-height: 1.15;
+            font-size: 11px;
+        }
+        .wc-row-cards #wcHands,
+        .wc-row-cards .wc-mini {
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 40px;
+            flex: 1 1 40px;
+            width: auto;
+            min-width: 32px;
+            max-width: 56px;
+            padding: 6px 2px;
+            font-size: 15px;
         }
         .wc-total-bar {
             display: -webkit-box;
@@ -651,7 +687,7 @@
         </div>
 
         <!-- 第二行：使用黄卡（= 手数） + 剩余黄卡（互斥，各占一半） -->
-        <div class="wc-row2">
+        <div class="wc-row2 wc-row-cards">
             <div class="wc-hands" id="wcHandsBox">
                 <span class="wc-hands-label">使用黄卡</span>
                 <input type="number" id="wcHands" step="1" placeholder="0">
@@ -666,7 +702,7 @@
         <!-- 第三行：筹码（输出，整行） -->
         <div class="wc-row2">
             <div class="wc-total-bar">
-                <span class="wc-k">筹码</span>
+                <span class="wc-k">桌面筹码</span>
                 <span><span class="wc-v" id="wcChipTotal">0</span></span>
             </div>
         </div>
@@ -709,7 +745,7 @@
 
     <div class="info">
         <strong>🏊 结算规则：</strong><br>
-        筹码 = 10000×a + 5000×b + 1000×c + 500×d + 100×e + 100000×f + 50000×g<br>
+        桌面筹码 = 10000×a + 5000×b + 1000×c + 500×d + 100×e + 100000×f + 50000×g<br>
         积分 = 净筹码 ÷ 2000，<span>向下取整（取整数倍）即为最终决算分</span><br>
         使用黄卡 + 剩余黄卡 = 7 张（= 14W 筹码）<br>
         已抵扣 = min(使用黄卡张数, 筹码 ÷ 20000 向下取整) × 20000（手上筹码先按整张卡抵扣）<br>
