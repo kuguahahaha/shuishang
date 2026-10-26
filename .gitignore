@@ -1,3 +1,5 @@
 _src/
 index.html.bak
+index.html.bak-*
 *.log
+*.tmp
