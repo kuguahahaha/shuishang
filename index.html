@@ -1126,6 +1126,53 @@
             font-size: 16px;
         }
 
+
+        /* 头部第一行：时间在最左 + 桌号 / 位置 / 昵称 三个输入框 */
+        .wc-clock {
+            display: flex;
+            -webkit-box-orient: vertical;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            -webkit-box-align: flex-start;
+            -ms-flex-align: flex-start;
+            align-items: flex-start;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            line-height: 1.15;
+            padding-right: 2px;
+            white-space: nowrap;
+        }
+        .wc-head-row1 {
+            gap: 6px;
+            flex-wrap: nowrap;
+        }
+        .wc-head-row1 .wc-field {
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 0;
+            flex: 1 1 0;
+            max-width: none;
+            min-width: 0;
+        }
+        .wc-head-row1 .wc-field-label {
+            font-size: 10px;
+            letter-spacing: 0;
+        }
+        .wc-head-row1 .wc-field-input {
+            min-width: 28px;
+            padding: 3px 2px;
+            font-size: 12px;
+        }
+        .wc-clock .clock-date {
+            font-size: 11px;
+        }
+        .wc-clock .clock-time {
+            font-size: 14px;
+        }
+
 </style>
 </head>
 <body>
@@ -1136,6 +1183,14 @@
         <div class="wc-head-box">
         <div class="wc-header">
             <div class="wc-head-row1">
+                <div class="wc-clock">
+                    <span class="clock-date" id="clockDate">----</span>
+                    <span class="clock-time" id="clockTime">--:--:--</span>
+                </div>
+                <div class="wc-field">
+                    <span class="wc-field-label">桌号</span>
+                    <input type="text" id="wcTable" class="wc-field-input" placeholder="A" maxlength="4">
+                </div>
                 <div class="wc-field">
                     <span class="wc-field-label">位置</span>
                     <input type="text" id="wcPlace" class="wc-field-input" placeholder="请输入" maxlength="10">
@@ -1144,10 +1199,6 @@
                     <span class="wc-field-label">昵称</span>
                     <input type="text" id="wcNickname" class="wc-field-input" placeholder="请输入昵称" maxlength="12">
                 </div>
-            </div>
-            <div class="wc-head-row2">
-                <span class="clock-date" id="clockDate">----</span>
-                <span class="clock-time" id="clockTime">--:--:--</span>
             </div>
         </div>
         </div>
@@ -1475,7 +1526,12 @@
             el.value = '';
         });
         wcHandsInput.value = '';
+        wcHandsInput.value = '';
         wcNicknameInput.value = '';
+        const wcTableInput = document.getElementById('wcTable');
+        const wcPlaceInput = document.getElementById('wcPlace');
+        if (wcTableInput) { wcTableInput.value = ''; }
+        if (wcPlaceInput) { wcPlaceInput.value = ''; }
         wcLeftInput.value = WC_DEFAULT_CARDS;
         updateNickname();
         calcWaterClub();
