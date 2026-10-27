@@ -833,21 +833,74 @@
             background: linear-gradient(180deg, #fff4ef, #ffebe3);
             border-color: #f3c6b6;
         }
+
+        /* ===== 模块头部三栏：标题 | 昵称 | 日期时间 ===== */
+        .wc-head-side {
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 0;
+            flex: 1 1 0;
+            min-width: 0;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+        }
+        .wc-head-right {
+            -webkit-box-pack: end;
+            -ms-flex-pack: end;
+            justify-content: flex-end;
+        }
+        .wc-head-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1f6fd0;
+            white-space: nowrap;
+        }
+        /* 日期加粗，字号与时间一致 */
+        .clock-date {
+            font-size: 15px;
+            font-weight: bold;
+            color: #2b85ff;
+        }
+        /* ===== 区域大框 ===== */
+        .wc-block {
+            background: -webkit-linear-gradient(top, #fffaf2, #fff3e6);
+            background: linear-gradient(180deg, #fffaf2, #fff3e6);
+            border: 1px solid #ffd9a6;
+            border-radius: 12px;
+            padding: 10px 10px 12px;
+            margin-bottom: 10px;
+            -webkit-border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(230, 140, 40, 0.07);
+        }
+        .wc-block-money {
+            background: -webkit-linear-gradient(top, #fff7f4, #ffebe4);
+            background: linear-gradient(180deg, #fff7f4, #ffebe4);
+            border-color: #f7ccc0;
+        }
+        .wc-block .wc-sub {
+            margin-left: 0;
+            margin-top: 0;
+        }
 </style>
 </head>
 <body>
 <div class="container">
-    <div class="page-head">
-        <h2>🏊 清点筹码</h2>
+<!-- ========== 新增模块：水上俱乐部 积分结算 ========== -->
+    <div class="wc-section">
+        <div class="wc-header">
+            <div class="wc-head-side">
+                <span class="wc-head-title">🏊 清点筹码</span>
+            </div>
+            <input type="text" id="wcNickname" class="wc-nick" placeholder="输入昵称" maxlength="12">
+            <div class="wc-head-side wc-head-right">
         <div class="clock">
             <div class="clock-date" id="clockDate">----年--月--日</div>
             <div class="clock-time" id="clockTime">--:--:--</div>
         </div>
-    </div>
-<!-- ========== 新增模块：水上俱乐部 积分结算 ========== -->
-    <div class="wc-section">
-        <div class="wc-header">
-            <input type="text" id="wcNickname" class="wc-nick" placeholder="输入昵称" maxlength="12">
+            </div>
         </div>
 
         <!-- 7 个面额：常用小面额在前，大面额在后 -->
@@ -886,14 +939,14 @@
         <div class="wc-row2 wc-row-cards">
             <div class="wc-hands" id="wcHandsBox">
                 <span class="wc-hands-label">使用黄卡</span>
-                <input type="number" id="wcHands" step="1" placeholder="0">
+                <input type="number" id="wcHands" min="0" max="7" step="1" placeholder="0">
             </div>
             <div class="wc-hands">
                 <span class="wc-hands-label">剩余黄卡</span>
-                <input type="number" id="wcLeft" step="1" placeholder="7" class="wc-mini">
+                <input type="number" id="wcLeft" min="0" max="7" step="1" placeholder="7" class="wc-mini">
             </div>
         </div>
-        <div class="wc-err" id="wcHandsErr">黄卡张数必须为整数（正整数或负整数）</div>
+        <div class="wc-err" id="wcHandsErr">黄卡张数需为 0 ~ 7 之间的整数</div>
 
         <!-- 第三行：筹码（输出，整行） -->
         <div class="wc-row2 wc-row-chips">
@@ -908,36 +961,40 @@
         </div>
         <div class="wc-tip" id="wcDeductInfo"></div>
 
-        <!-- 积分结算结果（已扣黄卡后的净值） -->
-        <div class="wc-sub">🏅 积分决算 · 已扣黄卡</div>
-        <div class="wc-grid wc-final wc-grid-2">
-            <div class="wc-card">
-                <div class="wc-k">积分结算</div>
-                <div class="wc-v" id="wcPoints">0.0000</div>
-            </div>
-            <div class="wc-card wc-card-main">
-                <div class="wc-k">取整数倍</div>
-                <div class="wc-v" id="wcFloor">0</div>
+        <!-- 积分决算区 -->
+        <div class="wc-block">
+            <div class="wc-sub">🏅 积分决算 · 已扣黄卡</div>
+            <div class="wc-grid wc-final wc-grid-2">
+                <div class="wc-card">
+                    <div class="wc-k">积分结算</div>
+                    <div class="wc-v" id="wcPoints">0.0000</div>
+                </div>
+                <div class="wc-card wc-card-main">
+                    <div class="wc-k">取整数倍</div>
+                    <div class="wc-v" id="wcFloor">0</div>
+                </div>
             </div>
         </div>
 
-        <!-- 黄卡（黄卡）结算：还差多少筹码 → 应付多少钱 -->
-        <div class="wc-sub wc-sub-money">💰 黄卡结算 · 抵不掉每张 10 元</div>
-        <div class="wc-grid wc-money">
-            <div class="wc-card">
-                <div class="wc-k">需还筹码</div>
-                <div class="wc-v" id="wcNeedChips">0</div>
+        <!-- 黄卡结算区 -->
+        <div class="wc-block wc-block-money">
+            <div class="wc-sub wc-sub-money">💰 黄卡结算 · 抵不掉每张 10 元</div>
+            <div class="wc-grid wc-money">
+                <div class="wc-card">
+                    <div class="wc-k">归还筹码</div>
+                    <div class="wc-v" id="wcNeedChips">0</div>
+                </div>
+                <div class="wc-card">
+                    <div class="wc-k">需补筹码</div>
+                    <div class="wc-v" id="wcGapChips">0</div>
+                </div>
+                <div class="wc-card wc-card-pay" id="wcPayCard">
+                    <div class="wc-k">支付</div>
+                    <div class="wc-v" id="wcPayMoney">¥0</div>
+                </div>
             </div>
-            <div class="wc-card">
-                <div class="wc-k">还差筹码</div>
-                <div class="wc-v" id="wcGapChips">0</div>
-            </div>
-            <div class="wc-card wc-card-pay" id="wcPayCard">
-                <div class="wc-k">支付</div>
-                <div class="wc-v" id="wcPayMoney">¥0</div>
-            </div>
+            <div class="wc-tip" id="wcMoneyInfo">结算筹码先按整张卡归还黄卡，抵不掉的每张黄卡付 10 元</div>
         </div>
-        <div class="wc-tip" id="wcMoneyInfo">手上筹码先按整张卡抵扣，抵不掉的每张黄卡付 10 元</div>
     </div>
     <div class="btn-box">
         <button id="wcResetBtn">重置所有</button>
@@ -1053,9 +1110,21 @@
         return WC_DEFAULT_CARDS;
     }
 
+    // 读取黄卡张数：只允许 0 ~ 7 的整数
+    function readCards(el) {
+        const n = readInt(el);
+        if (n === null) {
+            return null;
+        }
+        if (n < 0 || n > 7) {
+            return null;
+        }
+        return n;
+    }
+
     // 黄卡张数 → 剩余黄卡（互斥：两者相加 = 目标张数）
     function syncLeftFromHands() {
-        const hands = readInt(wcHandsInput);
+        const hands = readCards(wcHandsInput);
         if (hands === null) {
             return;
         }
@@ -1064,7 +1133,7 @@
 
     // 剩余黄卡 → 黄卡张数（互斥，反推）
     function syncHandsFromLeft() {
-        const left = readInt(wcLeftInput);
+        const left = readCards(wcLeftInput);
         if (left === null) {
             return;
         }
@@ -1081,8 +1150,8 @@
         });
         wcChipTotalEl.textContent = intText(total);
 
-        // 2. 黄卡张数校验：允许空、正整数、负整数、0；不允许小数和乱填
-        const hands = readInt(wcHandsInput);
+        // 2. 黄卡张数校验：只允许 0 ~ 7 的整数
+        const hands = readCards(wcHandsInput);
 
         if (hands === null) {
             wcHandsBox.classList.add('is-error');
@@ -1126,14 +1195,14 @@
 
         if (gapCards > 0) {
             wcPayCard.classList.remove('is-ok');
-            wcMoneyInfo.innerHTML = '手上 <b>' + intText(total) + '</b> 筹码可抵 <b>' +
-                canOffset + '</b> 张，抵不掉 <b>' + gapCards + '</b> 张（<b>' +
-                intText(gapChips) + '</b> 筹码）→ 应付 <b>¥' + payMoney + '</b>';
+            wcMoneyInfo.innerHTML = '结算 <b>' + intText(total) + '</b> 筹码可归还黄卡 <b>' +
+                canOffset + '</b> 张，需支付 <b>' + gapCards + '</b> 张（<b>' +
+                intText(gapChips) + '</b> 筹码）';
         } else {
             wcPayCard.classList.add('is-ok');
             const extra = netChips;
-            wcMoneyInfo.innerHTML = (cardsUsed === 0 ? '未使用黄卡，' : '黄卡已用筹码抵清，') +
-                '无需补款' + (extra > 0 ? '，净剩 <b>' + intText(extra) + '</b> 筹码' : '');
+            wcMoneyInfo.innerHTML = (cardsUsed === 0 ? '未使用黄卡，无需支付' : '黄卡已用筹码抵清，无需支付') +
+                (extra > 0 ? '，净剩 <b>' + intText(extra) + '</b> 筹码' : '');
         }
         // 5. 提示小字：说明黄卡抵扣情况
         wcDeductInfo.innerHTML = '已抵扣 <b>' +
