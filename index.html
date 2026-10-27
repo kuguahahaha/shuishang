@@ -370,7 +370,7 @@
             padding: 6px 2px;
             font-size: 15px;
         }
-        /* 筹码行（桌面筹码 + 净筹码）：始终并排一行 */
+        /* 筹码行（桌面筹码 + 结算筹码）：始终并排一行 */
         .wc-row-chips {
             -ms-flex-wrap: nowrap;
             flex-wrap: nowrap;
@@ -429,7 +429,7 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* 净筹码：桌面筹码右侧，绿色系区分 */
+        /* 结算筹码：桌面筹码右侧，绿色系区分 */
         .wc-total-bar.wc-net {
             background: -webkit-linear-gradient(top, #f1fbf2, #e6f7e8);
             background: linear-gradient(180deg, #f1fbf2, #e6f7e8);
@@ -691,6 +691,41 @@
         .wc-section {
             margin-bottom: 4px;
         }
+
+        /* ===== 高度统一 ===== */
+        /* 使用黄卡 / 剩余黄卡 / 桌面筹码 / 结算筹码：四个框等高 */
+        .wc-row-cards .wc-hands,
+        .wc-row-chips .wc-total-bar {
+            min-height: 46px;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+        /* 积分决算区（2 张）与黄卡结算区（3 张）：卡片等高 */
+        .wc-final .wc-card,
+        .wc-money .wc-card {
+            min-height: 70px;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-orient: vertical;
+            -webkit-box-direction: normal;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            padding: 9px 8px;
+        }
+        .wc-final .wc-card .wc-k,
+        .wc-money .wc-card .wc-k {
+            margin-bottom: 3px;
+        }
+        .wc-final .wc-card-main .wc-v,
+        .wc-money .wc-card-pay .wc-v {
+            line-height: 1.15;
+        }
 </style>
 </head>
 <body>
@@ -759,7 +794,7 @@
                 <span><span class="wc-v" id="wcChipTotal">0</span></span>
             </div>
             <div class="wc-total-bar wc-net">
-                <span class="wc-k">净筹码</span>
+                <span class="wc-k">结算筹码</span>
                 <span><span class="wc-v" id="wcNetChips">0</span></span>
             </div>
         </div>
@@ -790,7 +825,7 @@
                 <div class="wc-v" id="wcGapChips">0</div>
             </div>
             <div class="wc-card wc-card-pay" id="wcPayCard">
-                <div class="wc-k">应付金额</div>
+                <div class="wc-k">支付</div>
                 <div class="wc-v" id="wcPayMoney">¥0</div>
             </div>
         </div>
@@ -803,10 +838,10 @@
     <div class="info">
         <strong>🏊 结算规则：</strong><br>
         桌面筹码 = 10000×a + 5000×b + 1000×c + 500×d + 100×e + 100000×f + 50000×g<br>
-        积分 = 净筹码 ÷ 2000，<span>向下取整（取整数倍）即为最终决算分</span><br>
+        积分 = 结算筹码 ÷ 2000，<span>向下取整（取整数倍）即为最终决算分</span><br>
         使用黄卡 + 剩余黄卡 = 7 张（= 14W 筹码）<br>
         已抵扣 = min(使用黄卡张数, 筹码 ÷ 20000 向下取整) × 20000（手上筹码先按整张卡抵扣）<br>
-        净筹码 = 筹码 − 已抵扣<br>
+        结算筹码 = 桌面筹码 − 已抵扣<br>
         需还筹码 = 使用黄卡张数 × 20000<br>
         还差筹码 = 需还筹码 − 已抵扣（整张卡计）<br>
         <span>抵不掉的每张黄卡付 10 元</span><br><br>
@@ -930,7 +965,7 @@
     }
 
     // 核心：水上俱乐部结算（积分 + 黄卡现金）
-    // 口径：净筹码 = 筹码 − 已抵扣的整张卡（每张 2W）→ 积分 = 净筹码÷2000 → 向下取整（恒 ≥ 0）
+    // 口径：结算筹码 = 桌面筹码 − 已抵扣的整张卡（每张 2W）→ 积分 = 结算筹码÷2000 → 向下取整（恒 ≥ 0）
     function calcWaterClub() {
         // 1. 累加筹码（毛值）
         let total = 0;
@@ -965,7 +1000,7 @@
         const cardsUsed = Math.max(0, hands);                              // 实际用掉的张数
         const canOffset = Math.min(cardsUsed, Math.floor(total / WC_HAND_CHIPS));  // 手上筹码能抵几张
         const offsetChips = canOffset * WC_HAND_CHIPS;                     // 已抵扣的筹码
-        const netChips = total - offsetChips;                              // 净筹码（恒 ≥ 0）
+        const netChips = total - offsetChips;                              // 结算筹码（恒 ≥ 0）
         const points = netChips / WC_POINT_UNIT;
         // 积分显示保留 2 位小数（四舍五入），决算分仍向下取整
         wcPointsEl.textContent = pointsText(points);
@@ -998,10 +1033,9 @@
             wcDeductInfo.innerHTML = '1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，' +
                 '使用黄卡 + 剩余黄卡 = <b>' + readTargetCards() + '</b> 张';
         } else {
-            wcDeductInfo.innerHTML = '使用黄卡 <b>' + cardsUsed + '</b> 张，已抵扣 <b>' +
+            wcDeductInfo.innerHTML = '已抵扣 <b>' +
                 canOffset + '</b> 张（<b>' + intText(offsetChips) + '</b> 筹码），净剩 <b>' +
-                intText(netChips) + '</b> 筹码 = <b>' + intText(Math.floor(points)) +
-                '</b> 分，剩余黄卡 <b>' + intText(readTargetCards() - cardsUsed) + '</b>';
+                intText(netChips) + '</b> 筹码 = <b>' + intText(Math.floor(points)) + '</b> 分';
         }
     }
 
