@@ -732,12 +732,6 @@
             text-align: left;
             margin: 0;
         }
-        .clock-time {
-            font-size: 15px;
-            font-weight: bold;
-            color: #2b85ff;
-            font-variant-numeric: tabular-nums;
-        }
         /* ===== 模块头部：只保留昵称输入框并居中 ===== */
         /* ===== 面额：换行后第二行居中 ===== */
         .wc-chips {
@@ -848,9 +842,6 @@
 
         /* ===== 头部：位置 / 昵称 小胶囊 + 日期时间（整体压到一行高度） ===== */
         /* 时钟：日期右对齐，时间在第二行居中 */
-        .clock-time {
-            text-align: center;
-        }
         /* ===== 输入区大框（淡蓝） ===== */
         .wc-block-input {
             background: -webkit-linear-gradient(top, #f6faff, #e9f2ff);
@@ -861,19 +852,6 @@
 
 
         /* ===== 头部：位置 / 昵称 小胶囊 + 日期时间（紧凑单行高度） ===== */
-        .wc-header {
-            display: flex;
-            -webkit-box-align: center;
-            -ms-flex-align: center;
-            align-items: center;
-            justify-content: flex-start;
-            -ms-flex-wrap: nowrap;
-            flex-wrap: nowrap;
-            gap: 8px;
-            padding-bottom: 0;
-            margin-bottom: 8px;
-            border-bottom: none;
-        }
         .wc-field {
             display: flex;
             -webkit-box-orient: horizontal;
@@ -921,36 +899,7 @@
             box-shadow: 0 0 0 2px rgba(43, 133, 255, 0.18);
             -webkit-box-shadow: 0 0 0 2px rgba(43, 133, 255, 0.18);
         }
-        .wc-head-right {
-            display: flex;
-            -webkit-box-align: center;
-            -ms-flex-align: center;
-            align-items: center;
-            -webkit-box-flex: 0;
-            -ms-flex: 0 0 auto;
-            flex: 0 0 auto;
-            margin-left: auto;
-        }
         /* 时钟：日期右对齐，时间在第二行居中 */
-        .clock {
-            width: 84px;
-            text-align: right;
-            line-height: 1.2;
-        }
-        .clock-date {
-            font-size: 15px;
-            font-weight: bold;
-            color: #2b85ff;
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-        }
-        .clock-time {
-            font-size: 15px;
-            font-weight: bold;
-            color: #2b85ff;
-            text-align: center;
-            font-variant-numeric: tabular-nums;
-        }
         /* ===== 整体高度压缩 ===== */
         .wc-chip {
             padding: 5px 3px 6px;
@@ -983,6 +932,114 @@
             margin: 4px 0 2px 2px;
         }
 
+
+        /* ===== 头部：两行（胶囊行 + 日期时间行） ===== */
+        .wc-header {
+            display: flex;
+            -webkit-box-orient: vertical;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            gap: 5px;
+            padding-bottom: 0;
+            margin-bottom: 8px;
+            border-bottom: none;
+        }
+        .wc-head-row1 {
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .wc-head-row2 {
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: end;
+            -ms-flex-pack: end;
+            justify-content: flex-end;
+            gap: 10px;
+            white-space: nowrap;
+        }
+        .wc-head-row1 .wc-field {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 1 auto;
+            flex: 0 1 auto;
+        }
+        /* 日期与时间同一行，字号收紧防止折行 */
+        .clock-date {
+            font-size: 13px;
+            font-weight: bold;
+            color: #2b85ff;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+        .clock-time {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2b85ff;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+        /* ===== 框与框之间不留间距 ===== */
+        .wc-block {
+            margin-bottom: 0;
+        }
+        .wc-block + .wc-block {
+            margin-top: 0;
+        }
+        /* ===== 再次压缩高度 ===== */
+        .wc-section {
+            padding: 8px 10px 10px;
+            margin-bottom: 8px;
+        }
+        .wc-block {
+            padding: 6px 8px 7px;
+        }
+        .wc-chip {
+            padding: 4px 3px 5px;
+        }
+        .wc-chip input {
+            padding: 3px 2px;
+            font-size: 13.5px;
+        }
+        .wc-row-cards .wc-hands,
+        .wc-row-chips .wc-total-bar {
+            min-height: 38px;
+        }
+        .wc-final .wc-card,
+        .wc-money .wc-card {
+            min-height: 56px;
+            padding: 6px 8px;
+        }
+        .wc-grid {
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .wc-sub {
+            margin: 0 0 5px 2px;
+        }
+        .wc-tip {
+            margin: 3px 0 1px 2px;
+        }
+        .btn-box {
+            margin-top: 8px;
+        }
+
+
+        /* ===== 重置按钮吸底：任何屏幕都可见 ===== */
+        .btn-box {
+            position: -webkit-sticky;
+            position: sticky;
+            bottom: 0;
+            z-index: 20;
+            margin-top: 10px;
+            padding: 8px 0 2px;
+            background: -webkit-linear-gradient(top, rgba(255,255,255,0), #ffffff 28%);
+            background: linear-gradient(180deg, rgba(255,255,255,0), #ffffff 28%);
+        }
+
 </style>
 </head>
 <body>
@@ -990,19 +1047,19 @@
 <!-- ========== 新增模块：水上俱乐部 积分结算 ========== -->
     <div class="wc-section">
         <div class="wc-header">
-            <div class="wc-field">
-                <span class="wc-field-label">位置</span>
-                <input type="text" id="wcPlace" class="wc-field-input" placeholder="请输入" maxlength="10">
-            </div>
-            <div class="wc-field">
-                <span class="wc-field-label">昵称</span>
-                <input type="text" id="wcNickname" class="wc-field-input" placeholder="请输入昵称" maxlength="12">
-            </div>
-            <div class="wc-head-right">
-                <div class="clock">
-                    <div class="clock-date" id="clockDate">----</div>
-                    <div class="clock-time" id="clockTime">--:--:--</div>
+            <div class="wc-head-row1">
+                <div class="wc-field">
+                    <span class="wc-field-label">位置</span>
+                    <input type="text" id="wcPlace" class="wc-field-input" placeholder="请输入" maxlength="10">
                 </div>
+                <div class="wc-field">
+                    <span class="wc-field-label">昵称</span>
+                    <input type="text" id="wcNickname" class="wc-field-input" placeholder="请输入昵称" maxlength="12">
+                </div>
+            </div>
+            <div class="wc-head-row2">
+                <span class="clock-date" id="clockDate">----</span>
+                <span class="clock-time" id="clockTime">--:--:--</span>
             </div>
         </div>
             </div>
