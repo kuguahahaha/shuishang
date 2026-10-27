@@ -1,0 +1,30 @@
+From 57a65135f152332b0f69eaa34eb503d92124ae9c Mon Sep 17 00:00:00 2001
+From: Ray <799975656@qq.com>
+Date: Tue, 27 Oct 2026 03:24:26 +0800
+Subject: [PATCH 3/6] =?UTF-8?q?fix:=20=E7=A7=AF=E5=88=86=E7=BB=93=E7=AE=97?=
+ =?UTF-8?q?=E5=88=9D=E5=A7=8B=E5=8D=A0=E4=BD=8D=E7=BB=9F=E4=B8=80=E4=B8=BA?=
+ =?UTF-8?q?=E4=B8=A4=E4=BD=8D=E5=B0=8F=E6=95=B0=200.00?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ index.html | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/index.html b/index.html
+index 38de4b8..58fc5bd 100644
+--- a/index.html
++++ b/index.html
+@@ -735,7 +735,7 @@
+         <div class="wc-grid wc-final wc-grid-2">
+             <div class="wc-card">
+                 <div class="wc-k">积分结算</div>
+-                <div class="wc-v" id="wcPoints">0.0000</div>
++                <div class="wc-v" id="wcPoints">0.00</div>
+             </div>
+             <div class="wc-card wc-card-main">
+                 <div class="wc-k">取整数倍</div>
+-- 
+2.55.0.windows.3
+

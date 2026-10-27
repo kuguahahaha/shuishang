@@ -1,0 +1,70 @@
+From 9aff8875f73914ebd854fd962e7f26d99e916d57 Mon Sep 17 00:00:00 2001
+From: Ray <799975656@qq.com>
+Date: Tue, 27 Oct 2026 03:41:24 +0800
+Subject: [PATCH 5/6] =?UTF-8?q?fix:=20=E9=BB=84=E5=8D=A1=E7=BB=93=E7=AE=97?=
+ =?UTF-8?q?=E6=94=B9=E4=B8=BA=E5=9B=BA=E5=AE=9A=E8=BF=9814W(7=E5=BC=A0)?=
+ =?UTF-8?q?=EF=BC=8C=E7=BC=BA=E9=A2=9D=E6=AF=8F=E6=89=8B10=E5=85=83?=
+ =?UTF-8?q?=E8=A1=A5=E5=B7=AE=E9=A2=9D?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ index.html | 16 ++++++++++------
+ 1 file changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/index.html b/index.html
+index 051ce00..3f44aaf 100644
+--- a/index.html
++++ b/index.html
+@@ -687,7 +687,7 @@
+         </div>
+ 
+         <!-- 黄卡（黄卡）结算：还差多少筹码 → 应付多少钱 -->
+-        <div class="wc-sub wc-sub-money">💰 黄卡结算 · 每手（2W）10 元</div>
++        <div class="wc-sub wc-sub-money">💰 黄卡结算 · 还 14W（7 张）每手（2W）10 元</div>
+         <div class="wc-grid wc-money">
+             <div class="wc-card">
+                 <div class="wc-k">需还筹码</div>
+@@ -714,7 +714,8 @@
+         净筹码 = 筹码 − 黄卡张数 × 20000<br>
+         积分 = 净筹码 ÷ 2000，<span>向下取整（取整数倍）即为最终决算分</span><br>
+         使用黄卡 + 剩余黄卡 = 7 张（= 14W 筹码）<br>
+-        还差筹码 = 黄卡张数 × 20000 − 筹码<br>
++        需还筹码 = 140000（固定还 7 张 / 14W，与用几张无关）<br>
++        还差筹码 = 140000 − 筹码<br>
+         <span>每缺 1 手（2W 筹码）付 10 元，不足 1 手按 1 手算</span><br><br>
+         <strong>💡 使用说明：</strong><br>
+         使用黄卡与剩余黄卡互斥，填一个另一个自动算<br>
+@@ -870,8 +871,9 @@
+         wcPointsEl.textContent = pointsText(points);
+         wcFloorEl.textContent = intText(Math.floor(points));
+ 
+-        // 4. 黄卡现金结算：需还 = 张数×2W，还差 = 需还 − 手上筹码
+-        const needChips = hands * WC_HAND_CHIPS;
++        // 4. 黄卡现金结算：规则为「还 7 张卡或 14W 筹码」
++        //     需还固定 14W（与用几张无关），还差 = 需还 − 手上筹码，每缺 1 手付 10 元
++        const needChips = WC_DEFAULT_TARGET;
+         const gapChips = Math.max(0, needChips - total);
+         const gapHands = Math.ceil(gapChips / WC_HAND_CHIPS);   // 不足 1 手按 1 手算
+         const payMoney = gapHands * WC_HAND_MONEY;
+@@ -894,12 +896,14 @@
+         // 5. 提示小字：告诉用户黄卡到底折了多少筹码
+         if (hands === 0) {
+             wcDeductInfo.innerHTML = '1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，' +
+-                '使用黄卡 + 剩余黄卡 = <b>' + readTargetCards() + '</b> 张';
++                '使用黄卡 + 剩余黄卡 = <b>' + readTargetCards() + '</b> 张，' +
++                '结算需还 <b>14W</b>（7 张全额度）';
+         } else {
+             const chips = Math.abs(hands) * WC_HAND_CHIPS;
+             wcDeductInfo.innerHTML = '已' + (hands > 0 ? '扣除' : '加回') + ' <b>' +
+                 Math.abs(hands) + '</b> 张（手）= <b>' + intText(chips) +
+-                '</b> 筹码，剩余黄卡 <b>' + intText(readTargetCards() - hands) + '</b>';
++                '</b> 筹码，剩余黄卡 <b>' + intText(readTargetCards() - hands) +
++                '</b>，结算需还 <b>14W</b>';
+         }
+     }
+ 
+-- 
+2.55.0.windows.3
+

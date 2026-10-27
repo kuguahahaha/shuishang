@@ -1,0 +1,204 @@
+From 0b9536d927422bfd289a87c0d65b81bb67ddbf80 Mon Sep 17 00:00:00 2001
+From: Ray <799975656@qq.com>
+Date: Tue, 27 Oct 2026 03:31:15 +0800
+Subject: [PATCH 4/6] =?UTF-8?q?revert:=20=E7=A7=BB=E9=99=A4=E6=B0=B4?=
+ =?UTF-8?q?=E4=B8=8A/=E6=B0=B4=E4=B8=8B=E6=A8=A1=E5=BC=8F=EF=BC=8C?=
+ =?UTF-8?q?=E6=81=A2=E5=A4=8D=E5=8E=9F=E8=AE=A1=E7=AE=97=EF=BC=9B=E5=87=80?=
+ =?UTF-8?q?=E7=AD=B9=E7=A0=81=E4=B8=BA=E8=B4=9F=E6=97=B6=E7=A7=AF=E5=88=86?=
+ =?UTF-8?q?=E6=8C=890=E8=AE=A1(=E7=A7=AF=E5=88=86=E6=81=92>=3D0)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ index.html | 102 +++++------------------------------------------------
+ 1 file changed, 9 insertions(+), 93 deletions(-)
+
+diff --git a/index.html b/index.html
+index 58fc5bd..051ce00 100644
+--- a/index.html
++++ b/index.html
+@@ -603,54 +603,6 @@
+             margin-bottom: 4px;
+         }
+ 
+-        /* 水上 / 水下模式切换 */
+-        .wc-mode {
+-            display: -webkit-box;
+-            display: -ms-flexbox;
+-            display: flex;
+-            -webkit-box-align: center;
+-            -ms-flex-align: center;
+-            align-items: center;
+-            gap: 8px;
+-            margin: 10px 0 2px;
+-        }
+-        .wc-mode-label {
+-            font-size: 12px;
+-            font-weight: 600;
+-            color: #333;
+-            white-space: nowrap;
+-        }
+-        .wc-mode-btns {
+-            display: -webkit-box;
+-            display: -ms-flexbox;
+-            display: flex;
+-            gap: 6px;
+-            -webkit-box-flex: 1;
+-            -ms-flex: 1;
+-            flex: 1;
+-        }
+-        .wc-mode-btn {
+-            -webkit-box-flex: 1;
+-            -ms-flex: 1;
+-            flex: 1;
+-            padding: 7px 0;
+-            font-size: 13px;
+-            font-weight: 600;
+-            background: #ffffff;
+-            color: #66788f;
+-            border: 1px solid #d8e6f5;
+-            border-radius: 8px;
+-            -webkit-border-radius: 8px;
+-        }
+-        .wc-mode-btn.is-active {
+-            background: #2b85ff;
+-            color: #ffffff;
+-            border-color: #2b85ff;
+-        }
+-        .wc-mode-btn.is-active.wc-mode-under {
+-            background: #00897b;
+-            border-color: #00897b;
+-        }
+ 
+ </style>
+ </head>
+@@ -719,19 +671,10 @@
+                 <span class="wc-k">筹码</span>
+                 <span><span class="wc-v" id="wcChipTotal">0</span></span>
+             </div>
+-        </div>
+-        <!-- 筹码位置：水上（黄卡钱未付，积分扣黄卡） / 水下（黄卡钱已付清，积分不扣） -->
+-        <div class="wc-mode">
+-            <span class="wc-mode-label">筹码位置</span>
+-            <div class="wc-mode-btns">
+-                <button type="button" class="wc-mode-btn is-active" data-mode="above">水上</button>
+-                <button type="button" class="wc-mode-btn wc-mode-under" data-mode="under">水下</button>
+-            </div>
+-        </div>
+-        <div class="wc-tip" id="wcDeductInfo">1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，使用黄卡 + 剩余黄卡 = 7 张</div>
++        </div>        <div class="wc-tip" id="wcDeductInfo">1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，使用黄卡 + 剩余黄卡 = 7 张</div>
+ 
+         <!-- 积分结算结果（已扣黄卡后的净值） -->
+-        <div class="wc-sub" id="wcSubPoints">🏅 积分决算 · 已扣黄卡</div>
++        <div class="wc-sub">🏅 积分决算 · 已扣黄卡</div>
+         <div class="wc-grid wc-final wc-grid-2">
+             <div class="wc-card">
+                 <div class="wc-k">积分结算</div>
+@@ -819,9 +762,7 @@
+     const wcMoneyInfo = document.getElementById('wcMoneyInfo');
+     const wcDeductInfo = document.getElementById('wcDeductInfo');
+     const wcTitleEl = document.getElementById('wcTitle');
+-    const wcSubPointsEl = document.getElementById('wcSubPoints');
+-    const wcModeBtns = document.querySelectorAll('.wc-mode-btn');
+-    let wcUnderwater = false;                             // false=水上（默认），true=水下（黄卡钱已付清）    const wcNicknameInput = document.getElementById('wcNickname');
++    const wcNicknameInput = document.getElementById('wcNickname');
+ 
+     // 微信兼容格式化
+     function format(num) {
+@@ -894,7 +835,7 @@
+     }
+ 
+     // 核心：水上俱乐部结算（积分 + 黄卡现金）
+-    // 口径：水上 = 净筹码（筹码 − 黄卡张数×2W）÷2000 向下取整；水下 = 黄卡钱已付清，积分 = 筹码÷2000 向下取整
++    // 口径：净筹码 = 筹码 − 黄卡张数×2W → 积分 = 净筹码÷2000 → 向下取整；净筹码为负时积分按 0 计
+     function calcWaterClub() {
+         // 1. 累加筹码（毛值）
+         let total = 0;
+@@ -922,17 +863,16 @@
+         wcHandsErr.classList.remove('show');
+ 
+         // 3. 积分：净筹码 → 积分 → 向下取整（即最终决算分）
+-        //     水下模式：黄卡的钱已付清，不扣除黄卡张数，积分 = 筹码 ÷ 2000
+-        const netChips = wcUnderwater ? total : total - hands * WC_HAND_CHIPS;
++        //     净筹码为负数时，积分按 0 计（积分一定大于等于 0）
++        const netChips = Math.max(0, total - hands * WC_HAND_CHIPS);
+         const points = netChips / WC_POINT_UNIT;
+         // 积分显示保留 2 位小数（四舍五入），决算分仍向下取整
+         wcPointsEl.textContent = pointsText(points);
+         wcFloorEl.textContent = intText(Math.floor(points));
+ 
+         // 4. 黄卡现金结算：需还 = 张数×2W，还差 = 需还 − 手上筹码
+-        //     水下模式：黄卡的钱已付清，无需再付款
+         const needChips = hands * WC_HAND_CHIPS;
+-        const gapChips = wcUnderwater ? 0 : Math.max(0, needChips - total);
++        const gapChips = Math.max(0, needChips - total);
+         const gapHands = Math.ceil(gapChips / WC_HAND_CHIPS);   // 不足 1 手按 1 手算
+         const payMoney = gapHands * WC_HAND_MONEY;
+ 
+@@ -944,10 +884,6 @@
+             wcPayCard.classList.remove('is-ok');
+             wcMoneyInfo.innerHTML = '还差 <b>' + intText(gapChips) + '</b> 筹码 = <b>' +
+                 gapHands + '</b> 手（不足 1 手按 1 手）→ 应付 <b>¥' + payMoney + '</b>';
+-        } else if (wcUnderwater) {
+-            wcPayCard.classList.add('is-ok');
+-            wcMoneyInfo.innerHTML = '水下筹码：使用黄卡（<b>' + intText(Math.abs(hands)) +
+-                '</b> 张）的钱已付清，无需再付款';
+         } else {
+             wcPayCard.classList.add('is-ok');
+             const extra = total - needChips;
+@@ -955,10 +891,8 @@
+                 '无需补款' + (extra > 0 ? '，多余 <b>' + intText(extra) + '</b> 筹码' : '');
+         }
+ 
+-        // 5. 提示小字：告诉用户黄卡到底折了多少筹码（水下模式不扣除）
+-        if (wcUnderwater) {
+-            wcDeductInfo.innerHTML = '水下模式：积分 = 筹码 <b>' + intText(total) + '</b> ÷ 2000，黄卡的钱已付清、不再扣除';
+-        } else if (hands === 0) {
++        // 5. 提示小字：告诉用户黄卡到底折了多少筹码
++        if (hands === 0) {
+             wcDeductInfo.innerHTML = '1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，' +
+                 '使用黄卡 + 剩余黄卡 = <b>' + readTargetCards() + '</b> 张';
+         } else {
+@@ -969,16 +903,6 @@
+         }
+     }
+ 
+-    // 切换水上 / 水下模式：只影响积分口径与付款判断，不存储，刷新即恢复水上
+-    function setMode(under) {
+-        wcUnderwater = under;
+-        wcModeBtns.forEach(function (btn) {
+-            btn.classList.toggle('is-active', (btn.getAttribute('data-mode') === 'under') === under);
+-        });
+-        wcSubPointsEl.textContent = under ? '🏅 积分决算 · 水下（黄卡钱已付清）' : '🏅 积分决算 · 已扣黄卡';
+-        calcWaterClub();
+-    }
+-
+     // 昵称：仅作输入展示，不拼接到标题，不做任何存储，刷新即清空    // 昵称：仅作输入展示，不拼接到标题，不做任何存储，刷新即清空
+     function updateNickname() {
+         // 按需求去除：昵称不再显示在标题上
+@@ -993,7 +917,6 @@
+         wcNicknameInput.value = '';
+         wcLeftInput.value = WC_DEFAULT_CARDS;
+         updateNickname();
+-        setMode(false);   // 重置恢复默认水上模式
+         calcWaterClub();
+     }
+ /* ==================== 水上俱乐部：事件绑定 ==================== */
+@@ -1017,13 +940,6 @@
+         }
+     });
+ 
+-    // 水上 / 水下切换按钮
+-    wcModeBtns.forEach(function (btn) {
+-        btn.addEventListener('click', function () {
+-            setMode(btn.getAttribute('data-mode') === 'under');
+-        });
+-    });
+-
+     // 黄卡张数：变化时同步剩余黄卡（互斥）
+     function onHandsChange() {
+         syncLeftFromHands();
+-- 
+2.55.0.windows.3
+
