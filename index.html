@@ -1041,6 +1041,60 @@
             background: linear-gradient(180deg, rgba(255,255,255,0), #ffffff 28%);
         }
 
+
+        /* ===== 去掉外框（保留底色）+ 微信字体放大防挤压 ===== */
+        .wc-section {
+            background: -webkit-linear-gradient(top, #f2f8ff 0%, #fbfdff 100%);
+            background: linear-gradient(180deg, #f2f8ff 0%, #fbfdff 100%);
+            border: none;
+            box-shadow: none;
+            padding: 6px 4px 8px;
+        }
+        /* 位置 / 昵称：去边框，只留淡蓝底 */
+        .wc-field {
+            background: #eaf3ff;
+            border: none;
+            border-radius: 14px;
+            padding: 1px 10px 1px 9px;
+            -webkit-border-radius: 14px;
+            overflow: hidden;
+        }
+        .wc-field-label {
+            font-size: 11px;
+            flex: 0 0 auto;
+        }
+        .wc-field-input {
+            font-size: 12px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        /* 日期时间：禁止被压缩、禁止折行 */
+        .wc-head-row2 {
+            gap: 8px;
+            flex-wrap: nowrap;
+            overflow: visible;
+        }
+        .wc-head-row1 {
+            flex-wrap: nowrap;
+        }
+        .clock-date,
+        .clock-time {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+        .clock-date {
+            font-size: 12px;
+        }
+        .clock-time {
+            font-size: 13px;
+        }
+        /* 头部整体不被内容挤压变形 */
+        .wc-header {
+            overflow: visible;
+        }
+
 </style>
 </head>
 <body>
