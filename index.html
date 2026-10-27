@@ -941,6 +941,79 @@
             flex: 0 0 auto;
             margin-left: auto;
         }
+
+        /* ===== 头部：标签在上、输入框在下，与右侧两行时间垂直对齐 ===== */
+        .wc-header {
+            -webkit-box-pack: start;
+            -ms-flex-pack: start;
+            justify-content: flex-start;
+            -ms-flex-wrap: nowrap;
+            flex-wrap: nowrap;
+            gap: 12px;
+            padding-bottom: 12px;
+        }
+        .wc-field {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-orient: vertical;
+            -webkit-box-direction: normal;
+            -ms-flex-direction: column;
+            flex-direction: column;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            gap: 4px;
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 0;
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 40%;
+        }
+        .wc-field-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #8a9bb3;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+        .wc-field-input {
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            padding: 5px 8px;
+            font-size: 13px;
+            font-weight: 400;
+            border-radius: 7px;
+            text-align: center;
+        }
+        .wc-field-input:focus {
+            box-shadow: 0 0 0 2px rgba(43, 133, 255, 0.15);
+            -webkit-box-shadow: 0 0 0 2px rgba(43, 133, 255, 0.15);
+        }
+        .wc-head-right {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            margin-left: auto;
+        }
+        /* ===== 输入区大框（淡蓝） ===== */
+        .wc-block-input {
+            background: -webkit-linear-gradient(top, #f6faff, #e9f2ff);
+            background: linear-gradient(180deg, #f6faff, #e9f2ff);
+            border-color: #cfe4ff;
+            box-shadow: 0 2px 6px rgba(43, 133, 255, 0.07);
+        }
+
 </style>
 </head>
 <body>
@@ -967,6 +1040,8 @@
         </div>
 
         <!-- 7 个面额：常用小面额在前，大面额在后 -->
+        <!-- 输入区：面额 / 黄卡 / 桌面筹码 -->
+        <div class="wc-block wc-block-input">
         <div class="wc-chips">
             <div class="wc-chip wc-black">
                 <label><i class="ball ball-black"></i>1W</label>
@@ -1023,6 +1098,7 @@
             </div>
         </div>
         <div class="wc-tip" id="wcDeductInfo"></div>
+        </div>
 
         <!-- 积分决算区 -->
         <div class="wc-block">
