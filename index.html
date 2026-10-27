@@ -884,6 +884,63 @@
             margin-left: 0;
             margin-top: 0;
         }
+
+        /* ===== 头部：位置 / 昵称 输入框（靠左）+ 日期时间（最右） ===== */
+        .wc-header {
+            -webkit-box-pack: start;
+            -ms-flex-pack: start;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+        .wc-field {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            gap: 4px;
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 auto;
+            flex: 1 1 auto;
+            min-width: 0;
+            max-width: 46%;
+        }
+        .wc-field-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #455a75;
+            white-space: nowrap;
+        }
+        .wc-field-input {
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 40px;
+            flex: 1 1 40px;
+            width: auto;
+            min-width: 40px;
+            max-width: 92px;
+            padding: 4px 8px;
+            font-size: 13px;
+            font-weight: 400;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .wc-field-input:focus {
+            box-shadow: 0 0 0 2px rgba(43, 133, 255, 0.15);
+            -webkit-box-shadow: 0 0 0 2px rgba(43, 133, 255, 0.15);
+        }
+        .wc-head-right {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-flex: 0;
+            -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+            margin-left: auto;
+        }
 </style>
 </head>
 <body>
@@ -891,14 +948,20 @@
 <!-- ========== 新增模块：水上俱乐部 积分结算 ========== -->
     <div class="wc-section">
         <div class="wc-header">
-            <div class="wc-head-side">
-                <span class="wc-head-title">🏊 清点筹码</span>
+            <div class="wc-field">
+                <span class="wc-field-label">位置</span>
+                <input type="text" id="wcPlace" class="wc-field-input" placeholder="请输入" maxlength="10">
             </div>
-            <input type="text" id="wcNickname" class="wc-nick" placeholder="输入昵称" maxlength="12">
-            <div class="wc-head-side wc-head-right">
-        <div class="clock">
-            <div class="clock-date" id="clockDate">----年--月--日</div>
-            <div class="clock-time" id="clockTime">--:--:--</div>
+            <div class="wc-field">
+                <span class="wc-field-label">昵称</span>
+                <input type="text" id="wcNickname" class="wc-field-input" placeholder="请输入昵称" maxlength="12">
+            </div>
+            <div class="wc-head-right">
+                <div class="clock">
+                    <div class="clock-date" id="clockDate">----</div>
+                    <div class="clock-time" id="clockTime">--:--:--</div>
+                </div>
+            </div>
         </div>
             </div>
         </div>
@@ -1233,7 +1296,7 @@
     function updateClock() {
         const now = new Date();
         const pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
-        clockDateEl.textContent = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日';
+        clockDateEl.textContent = now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate());
         clockTimeEl.textContent = pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + ':' + pad2(now.getSeconds());
     }
     updateClock();
