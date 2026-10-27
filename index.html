@@ -1506,13 +1506,11 @@
         } else {
             wcPayCard.classList.add('is-ok');
             const extra = netChips;
-            wcMoneyInfo.innerHTML = (cardsUsed === 0 ? '未使用黄卡，无需支付' : '黄卡已用筹码抵清，无需支付') +
-                (extra > 0 ? '，净剩 <b>' + intText(extra) + '</b> 筹码' : '');
+            wcMoneyInfo.innerHTML = (cardsUsed === 0 ? '未使用黄卡，无需支付' : '黄卡已用筹码抵清，无需支付');
         }
         // 5. 提示小字：说明黄卡抵扣情况
         wcDeductInfo.innerHTML = '已抵扣 <b>' +
-            canOffset + '</b> 张（<b>' + intText(offsetChips) + '</b> 筹码），净剩 <b>' +
-            intText(netChips) + '</b> 筹码 = <b>' + intText(Math.floor(points)) + '</b> 分';
+            canOffset + '</b> 张（<b>' + intText(offsetChips) + '</b> 筹码）';
     }
 
     // 昵称：仅作输入展示，不拼接到标题，不做任何存储，刷新即清空
