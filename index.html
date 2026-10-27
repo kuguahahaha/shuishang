@@ -806,6 +806,33 @@
         .wc-rules {
             display: none;
         }
+
+        /* ===== 配色增强 ===== */
+        /* 日期与时间统一蓝色 */
+        .clock-date {
+            color: #2b85ff;
+        }
+        /* 黄卡输入框：淡黄底色（错误态仍保持红框红底） */
+        .wc-row-cards .wc-hands {
+            background: #fffaef;
+            border-color: #f0dcb4;
+        }
+        .wc-row-cards .wc-hands .wc-hands-label {
+            color: #a3701f;
+        }
+        .wc-row-cards .wc-hands.is-error {
+            background: #fff6f6;
+            border-color: #e53935;
+        }
+        .wc-row-cards .wc-hands.is-error .wc-hands-label {
+            color: #c62828;
+        }
+        /* 黄卡结算：需还 / 还差两卡加底色（支付卡沿用原深橙红样式） */
+        .wc-money .wc-card:not(.wc-card-pay) {
+            background: -webkit-linear-gradient(top, #fff4ef, #ffebe3);
+            background: linear-gradient(180deg, #fff4ef, #ffebe3);
+            border-color: #f3c6b6;
+        }
 </style>
 </head>
 <body>
