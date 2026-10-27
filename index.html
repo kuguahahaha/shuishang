@@ -370,6 +370,32 @@
             padding: 6px 2px;
             font-size: 15px;
         }
+        /* 筹码行（桌面筹码 + 净筹码）：始终并排一行 */
+        .wc-row-chips {
+            -ms-flex-wrap: nowrap;
+            flex-wrap: nowrap;
+            gap: 6px;
+        }
+        .wc-row-chips > * {
+            -webkit-box-flex: 1;
+            -ms-flex: 1 1 0;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+        .wc-row-chips .wc-total-bar {
+            padding: 6px 8px;
+            gap: 4px;
+        }
+        .wc-row-chips .wc-total-bar .wc-k {
+            font-size: 11px;
+            white-space: normal;
+            line-height: 1.15;
+        }
+        .wc-row-chips .wc-total-bar .wc-v,
+        .wc-row-chips .wc-total-bar.wc-net .wc-v {
+            font-size: 16px;
+            white-space: nowrap;
+        }
         .wc-total-bar {
             display: -webkit-box;
             display: -ms-flexbox;
@@ -401,6 +427,20 @@
             color: #1f6fd0;
             letter-spacing: 0.5px;
             font-variant-numeric: tabular-nums;
+        }
+
+        /* 净筹码：桌面筹码右侧，绿色系区分 */
+        .wc-total-bar.wc-net {
+            background: -webkit-linear-gradient(top, #f1fbf2, #e6f7e8);
+            background: linear-gradient(180deg, #f1fbf2, #e6f7e8);
+            border-color: #b6dfbb;
+        }
+        .wc-total-bar.wc-net .wc-k {
+            color: #2e7d32;
+        }
+        .wc-total-bar.wc-net .wc-v {
+            color: #2e9e46;
+            font-size: 19px;
         }
         .wc-unit {
             font-size: 11px;
@@ -604,10 +644,23 @@
         }
 
         /* 黄卡（黄卡）结算区：红金配色，和积分区区分开 */
+        /* 黄卡结算三卡固定一行（需还 / 还差 / 应付） */
+        .wc-money {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+        }
         .wc-money .wc-card {
-            background: #fffaf9;
-            border-color: #f7d9d2;
-            box-shadow: 0 1px 4px rgba(176, 38, 30, 0.07);
+            padding: 7px 6px;
+            min-width: 0;
+        }
+        .wc-money .wc-card .wc-k {
+            font-size: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .wc-money .wc-card .wc-v {
+            font-size: 15px;
         }
         .wc-money .wc-card .wc-k {
             color: #a05242;
@@ -628,7 +681,7 @@
             font-size: 12px;
         }
         .wc-money .wc-card-pay .wc-v {
-            font-size: 24px;
+            font-size: 19px;
         }
         /* 状态色：无需补款显示绿色 */
         .wc-money .wc-card.is-ok .wc-v {
@@ -700,10 +753,14 @@
         <div class="wc-err" id="wcHandsErr">黄卡张数必须为整数（正整数或负整数）</div>
 
         <!-- 第三行：筹码（输出，整行） -->
-        <div class="wc-row2">
+        <div class="wc-row2 wc-row-chips">
             <div class="wc-total-bar">
                 <span class="wc-k">桌面筹码</span>
                 <span><span class="wc-v" id="wcChipTotal">0</span></span>
+            </div>
+            <div class="wc-total-bar wc-net">
+                <span class="wc-k">净筹码</span>
+                <span><span class="wc-v" id="wcNetChips">0</span></span>
             </div>
         </div>
         <div class="wc-tip" id="wcDeductInfo">1 张黄卡 = 1 手 = <b>2W</b> 筹码 = <b>10</b> 积分，使用黄卡 + 剩余黄卡 = 7 张</div>
@@ -786,6 +843,7 @@
         return document.getElementById(c.id);
     });
     const wcChipTotalEl = document.getElementById('wcChipTotal');
+    const wcNetChipsEl = document.getElementById('wcNetChips');
     const wcPointsEl = document.getElementById('wcPoints');
     const wcFloorEl = document.getElementById('wcFloor');
     const wcHandsInput = document.getElementById('wcHands');
@@ -888,6 +946,7 @@
             wcHandsBox.classList.add('is-error');
             wcHandsErr.classList.add('show');
             wcPointsEl.textContent = '—';
+            wcNetChipsEl.textContent = '—';
             wcFloorEl.textContent = '—';
             wcNeedChipsEl.textContent = '—';
             wcGapChipsEl.textContent = '—';
@@ -911,6 +970,7 @@
         // 积分显示保留 2 位小数（四舍五入），决算分仍向下取整
         wcPointsEl.textContent = pointsText(points);
         wcFloorEl.textContent = intText(Math.floor(points));
+        wcNetChipsEl.textContent = intText(netChips);
 
         // 4. 黄卡现金结算：需还 = 用掉的张数×2W；抵不掉的部分每张 10 元
         const needChips = cardsUsed * WC_HAND_CHIPS;      // 需还的筹码（用几张还几张）
