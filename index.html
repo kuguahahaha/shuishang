@@ -801,6 +801,11 @@
                 max-width: calc((100% - 48px) / 7);
             }
         }
+
+        /* 结算规则说明块：按需隐藏（保留原版工具说明） */
+        .wc-rules {
+            display: none;
+        }
 </style>
 </head>
 <body>
@@ -911,7 +916,7 @@
         <button id="wcResetBtn">重置所有</button>
     </div>
 
-    <div class="info">
+    <div class="info wc-rules">
         <strong>🏊 结算规则：</strong><br>
         桌面筹码 = 10000×a + 5000×b + 1000×c + 500×d + 100×e + 100000×f + 50000×g<br>
         积分 = 结算筹码 ÷ 2000，<span>向下取整（取整数倍）即为最终决算分</span><br>
