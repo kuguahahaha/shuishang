@@ -1,0 +1,13 @@
+{
+  "name": "record-sync",
+  "version": "1.0.0",
+  "description": "水上俱乐部 · 记录备份到飞书多维表格的云函数（凭据只存在云端环境变量）",
+  "main": "index.js",
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "test": "node test/local-test.js"
+  },
+  "license": "MIT"
+}
