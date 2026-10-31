@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>水上俱乐部 · 积分记录表</title>
+<style>
+    /* ===================== 基础样式 ===================== */
+    * {
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+    body {
+        max-width: 580px;
+        margin: 16px auto;
+        padding: 0 12px;
+        background: #eef5ff;
+        color: #22344d;
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+        -webkit-text-size-adjust: 100%;
+    }
+    .container {
+        background: #ffffff;
+        padding: 14px 12px 16px;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+        border: 1px solid #d6e8ff;
+    }
+    input, button {
+        font-family: inherit;
+        outline: none;
+    }
+    input[type="number"], input[type="text"] {
+        padding: 8px 8px;
+        border: 1px solid #c8e0ff;
+        border-radius: 8px;
+        font-size: 15px;
+        background: #f9fcff;
+        color: #22344d;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    input[type="number"] {
+        -webkit-appearance: none;
+        appearance: none;
+        text-align: center;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input:focus {
+        border-color: #2b85ff;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(43, 133, 255, 0.15);
+        -webkit-box-shadow: 0 0 0 3px rgba(43, 133, 255, 0.15);
+    }
+
+    /* ===================== 顶部标题 ===================== */
+    .page-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .page-head h1 {
+        margin: 0;
+        font-size: 19px;
+        font-weight: bold;
+        color: #2b85ff;
+        white-space: nowrap;
+    }
+    /* 顶部小链接：跳回筹码结算工具 */
+    .head-link {
+        display: inline-block;
+        margin-top: 3px;
+        font-size: 11px;
+        color: #7a8ba3;
+        text-decoration: none;
+    }
+    .head-link:active {
+        color: #2b85ff;
+    }
+    .clock {
+        text-align: right;
+        line-height: 1.2;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+    .clock-date {
+        font-size: 12px;
+        font-weight: bold;
+        color: #2b85ff;
+    }
+    .clock-time {
+        font-size: 15px;
+        font-weight: bold;
+        color: #2b85ff;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ===================== 通用区块 ===================== */
+    .block {
+        border-radius: 12px;
+        padding: 10px 10px 12px;
+        margin-bottom: 10px;
+        border: 1px solid #cfe4ff;
+        background: linear-gradient(180deg, #f6faff, #e9f2ff);
+        box-shadow: 0 2px 6px rgba(43, 133, 255, 0.07);
+    }
+    .block-title {
+        font-size: 13px;
+        font-weight: bold;
+        color: #1f6fd0;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .block-title .hint {
+        font-size: 11px;
+        font-weight: 400;
+        color: #7a8ba3;
+    }
+    .block-orange {
+        border-color: #ffd9a6;
+        background: linear-gradient(180deg, #fffaf2, #fff3e6);
+    }
+    .block-pink {
+        border-color: #f7ccc0;
+        background: linear-gradient(180deg, #fff7f4, #ffebe4);
+    }
+    .block-green {
+        border-color: #bfe3c4;
+        background: linear-gradient(180deg, #f4fbf5, #e9f7ec);
+    }
+
+    /* ===================== 场次信息 ===================== */
+    .field-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .field {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 1 1 120px;
+        min-width: 0;
+    }
+    .field label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #455a75;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+    .field input {
+        flex: 1 1 40px;
+        width: auto;
+        min-width: 0;
+        padding: 6px 6px;
+        font-size: 13px;
+        border-radius: 7px;
+    }
+
+    /* ===================== 录入区 ===================== */
+    .rec-step {
+        font-size: 12px;
+        font-weight: bold;
+        color: #1f6fd0;
+        background: #ffffff;
+        border: 1px solid #cfe4ff;
+        border-radius: 12px;
+        padding: 2px 9px;
+    }
+    .rec-name {
+        width: 100%;
+        margin-bottom: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+    }
+    /* 7 个面额 */
+    .chips {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+    .chip {
+        flex: 0 0 calc(25% - 5px);
+        max-width: calc(25% - 5px);
+        text-align: center;
+        background: #ffffff;
+        border: 1px solid #eaf2fd;
+        border-radius: 10px;
+        padding: 4px 2px 5px;
+        box-shadow: 0 1px 3px rgba(43, 133, 255, 0.06);
+    }
+    .chip label {
+        display: block;
+        font-size: 12px;
+        font-weight: bold;
+        color: #455a75;
+        margin-bottom: 3px;
+        cursor: pointer;
+    }
+    .chip input {
+        width: 100%;
+        padding: 4px 2px;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        border-radius: 6px;
+    }
+    /* 筹码小球 */
+    .ball {
+        display: inline-block;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        vertical-align: middle;
+        margin-right: 3px;
+        box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+    }
+    .ball-blue { background: radial-gradient(circle at 30% 30%, #7fb4ff, #1f6fd0); }
+    .ball-purple { background: radial-gradient(circle at 30% 30%, #c4a8ff, #7b3fd4); }
+    .ball-pink { background: radial-gradient(circle at 30% 30%, #ffb3d9, #e0559a); }
+    .ball-black { background: radial-gradient(circle at 30% 30%, #6b7280, #1f2430); }
+    .ball-orange { background: radial-gradient(circle at 30% 30%, #ffc48a, #e07b1a); }
+    .ball-gold { background: radial-gradient(circle at 30% 30%, #ffe08a, #d9a520); }
+    .ball-green { background: radial-gradient(circle at 30% 30%, #a8e6a0, #3f9c47); }
+
+    /* 实时结果条 */
+    .calc-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        background: #ffffff;
+        border: 1px solid #ffd9a6;
+        border-radius: 10px;
+        padding: 8px 6px;
+        margin-bottom: 8px;
+    }
+    .calc-item {
+        flex: 1 1 30%;
+        text-align: center;
+        min-width: 0;
+    }
+    .calc-item .k {
+        font-size: 11px;
+        color: #8a9bb3;
+        display: block;
+    }
+    .calc-item .v {
+        font-size: 17px;
+        font-weight: bold;
+        color: #1f6fd0;
+        font-variant-numeric: tabular-nums;
+        word-break: break-all;
+    }
+    .calc-item .v.warn { color: #e05a2b; }
+    .calc-item .v.money { color: #b0261e; }
+
+    /* 按钮 */
+    .btn-row {
+        display: flex;
+        gap: 8px;
+    }
+    button {
+        flex: 1;
+        padding: 11px 8px;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #ffffff;
+        background: linear-gradient(180deg, #4b97ff, #2b85ff);
+        box-shadow: 0 2px 6px rgba(43, 133, 255, 0.28);
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    button:active {
+        opacity: 0.85;
+    }
+    button.secondary {
+        background: #ffffff;
+        color: #2b85ff;
+        border: 1px solid #a9cdf7;
+        box-shadow: none;
+    }
+    button.ghost {
+        background: #ffffff;
+        color: #455a75;
+        border: 1px solid #d7e5f8;
+        box-shadow: none;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 9px 6px;
+    }
+    button.danger {
+        background: linear-gradient(180deg, #ff7a6b, #e53935);
+        box-shadow: 0 2px 6px rgba(229, 57, 53, 0.28);
+    }
+    button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    /* ===================== 记录表 ===================== */
+    .rec-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #ffffff;
+        border-radius: 9px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(43, 133, 255, 0.08);
+    }
+    .rec-table th {
+        background: #eaf3ff;
+        color: #1f6fd0;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 7px 3px;
+        border-bottom: 1px solid #d7e5f8;
+        white-space: nowrap;
+    }
+    .rec-table td {
+        font-size: 13px;
+        padding: 7px 3px;
+        border-bottom: 1px solid #f0f5fc;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+    .rec-table td.name {
+        text-align: left;
+        padding-left: 8px;
+        font-weight: 600;
+        word-break: break-all;
+    }
+    .rec-table tr:last-child td { border-bottom: none; }
+    .rec-table tr.total td {
+        background: #f7fbff;
+        font-weight: bold;
+        color: #1f6fd0;
+    }
+    .rec-table tr.medal-1 td { background: #fff8e1; }
+    .rec-table tr.medal-2 td { background: #f7f9fc; }
+    .rec-table tr.medal-3 td { background: #fdf6ef; }
+    .row-del {
+        background: none;
+        border: none;
+        color: #b8c6d8;
+        font-size: 15px;
+        padding: 0 4px;
+        cursor: pointer;
+        box-shadow: none;
+        flex: none;
+    }
+    .row-edit {
+        background: none;
+        border: none;
+        color: #2b85ff;
+        font-size: 12px;
+        padding: 0 4px;
+        cursor: pointer;
+        box-shadow: none;
+        flex: none;
+    }
+    .empty-tip {
+        text-align: center;
+        color: #a8b8cc;
+        font-size: 13px;
+        padding: 18px 0;
+    }
+
+    /* ===================== 结算区 ===================== */
+    .rank-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+    .rank-card {
+        flex: 1;
+        background: #ffffff;
+        border: 1px solid #ffd9a6;
+        border-radius: 10px;
+        padding: 7px 4px;
+        text-align: center;
+        min-width: 0;
+    }
+    .rank-card .rk {
+        font-size: 11px;
+        color: #8a9bb3;
+        display: block;
+    }
+    .rank-card .rv {
+        font-size: 15px;
+        font-weight: bold;
+        color: #1f6fd0;
+        display: block;
+        word-break: break-all;
+    }
+    .rank-card .rp {
+        font-size: 11px;
+        color: #b0261e;
+    }
+    .check-line {
+        background: #ffffff;
+        border: 1px solid #cfe4ff;
+        border-radius: 9px;
+        padding: 8px 10px;
+        font-size: 13px;
+        color: #455a75;
+        margin-bottom: 8px;
+        line-height: 1.6;
+    }
+    .check-line b {
+        color: #1f6fd0;
+        font-size: 15px;
+    }
+    .check-line.bad {
+        border-color: #e53935;
+        background: #fff6f5;
+        color: #c62828;
+    }
+    .check-line.bad b {
+        color: #c62828;
+    }
+    .check-line.good b {
+        color: #2e9e46;
+    }
+
+    /* ===================== 历史场次 ===================== */
+    .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 210px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .history-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px solid #e3eefc;
+        border-radius: 9px;
+        padding: 7px 9px;
+        font-size: 13px;
+    }
+    .history-item .hi-main {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .history-item .hi-sub {
+        font-size: 11px;
+        color: #8a9bb3;
+        flex: 0 0 auto;
+    }
+    .history-item.cur {
+        border-color: #2b85ff;
+        background: #f2f8ff;
+    }
+
+    .tip {
+        font-size: 12px;
+        color: #7a8ba3;
+        line-height: 1.6;
+        margin-top: 6px;
+    }
+    .tip b { color: #455a75; }
+    .divider {
+        height: 1px;
+        background: #dce9f8;
+        margin: 10px 0;
+    }
+
+    /* ===== 截图预览层 ===== */
+    .png-mask {
+        position: fixed;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 30, 55, 0.72);
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+    }
+    .png-wrap {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 10px;
+        max-width: 100%;
+        max-height: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        text-align: center;
+    }
+    .png-canvas {
+        display: block;
+        width: 100%;
+        max-width: 900px;
+        height: auto;
+        border: 1px solid #e3eefc;
+        border-radius: 6px;
+    }
+    .png-tip {
+        font-size: 12px;
+        color: #7a8ba3;
+        margin: 8px 0 6px;
+    }
+    .png-btns {
+        display: flex;
+        gap: 8px;
+    }
+    .nowrap { white-space: nowrap; }
+
+    /* ===== 备份状态行（唯一允许出现备份信息的位置：结算面板） ===== */
+    .backup-line {
+        margin-top: 8px;
+        padding: 7px 10px;
+        border-radius: 9px;
+        font-size: 12px;
+        text-align: center;
+        background: #f4fbf5;
+        border: 1px solid #cfe8d4;
+        color: #2e7d32;
+    }
+    .backup-line.warn {
+        background: #fff8ec;
+        border-color: #f5d9a8;
+        color: #a3701f;
+    }
+    .backup-line.bad {
+        background: #fff6f5;
+        border-color: #f0c4c0;
+        color: #c62828;
+    }
+
+    /* ===== 团队访问口令 绑定弹窗 ===== */
+    .modal-mask {
+        position: fixed;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 30, 55, 0.55);
+        z-index: 900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    .modal-box {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 16px 14px 14px;
+        width: 100%;
+        max-width: 340px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    }
+    .modal-title {
+        font-size: 15px;
+        font-weight: bold;
+        color: #1f6fd0;
+        margin-bottom: 6px;
+    }
+    .modal-desc {
+        font-size: 12px;
+        color: #7a8ba3;
+        line-height: 1.6;
+        margin-bottom: 10px;
+    }
+    .modal-box input[type="text"] {
+        width: 100%;
+        padding: 9px 10px;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    .modal-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #455a75;
+        margin-bottom: 8px;
+    }
+    .modal-row input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+    }
+    .modal-err {
+        font-size: 12px;
+        color: #c62828;
+        min-height: 16px;
+        margin-bottom: 4px;
+    }
+    .modal-btns {
+        display: flex;
+        gap: 8px;
+    }
+    .modal-btns button {
+        flex: 1;
+    }
+
+    /* ===== 团队协作设置 ===== */
+    .settings-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+    .settings-row input {
+        flex: 1 1 160px;
+        width: auto;
+        font-size: 13px;
+        padding: 7px 8px;
+    }
+    .settings-row button {
+        flex: 0 0 auto;
+        width: auto;
+        padding: 7px 14px;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===================== 顶部标题 ===================== -->
+    <div class="page-head">
+        <div>
+            <h1>🎴 积分记录表</h1>
+            <a class="head-link" href="./">← 筹码结算工具</a>
+        </div>
+        <div class="clock">
+            <div class="clock-date" id="clockDate">----</div>
+            <div class="clock-time" id="clockTime">--:--:--</div>
+        </div>
+    </div>
+
+    <!-- ===================== 场次信息 ===================== -->
+    <div class="block">
+        <div class="block-title">📋 场次信息 <span class="hint" id="sessionHint"></span></div>
+        <div class="field-grid">
+            <div class="field">
+                <label>日期</label>
+                <input type="text" id="fDate" placeholder="2026-10-29">
+            </div>
+            <div class="field">
+                <label>场次</label>
+                <input type="text" id="fSession" placeholder="如：下午场">
+            </div>
+            <div class="field">
+                <label>桌号</label>
+                <input type="text" id="fTable" placeholder="A" maxlength="4">
+            </div>
+            <div class="field">
+                <label>应到人数</label>
+                <input type="number" id="fExpected" min="1" max="30" step="1" value="10">
+            </div>
+            <div class="field">
+                <label>记录人</label>
+                <input type="text" id="fRecorder" placeholder="选填" maxlength="10">
+            </div>
+            <div class="field">
+                <label>审核人</label>
+                <input type="text" id="fReviewer" placeholder="选填" maxlength="10">
+            </div>
+            <div class="field">
+                <label>评分</label>
+                <input type="text" id="fRating" placeholder="选填" maxlength="10">
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== 录入区 ===================== -->
+    <div class="block block-orange">
+        <div class="block-title">
+            <span>✍️ 逐人录入</span>
+            <span class="rec-step" id="recStep">第 1 位</span>
+        </div>
+        <input type="text" id="recName" class="rec-name" placeholder="输入玩家昵称" maxlength="12" autocomplete="off">
+        <div class="chips" id="chipsBox">
+            <div class="chip">
+                <label><i class="ball ball-blue"></i>500</label>
+                <input type="number" id="c500" min="0" step="1" placeholder="">
+            </div>
+            <div class="chip">
+                <label><i class="ball ball-purple"></i>1000</label>
+                <input type="number" id="c1000" min="0" step="1" placeholder="">
+            </div>
+            <div class="chip">
+                <label><i class="ball ball-pink"></i>5000</label>
+                <input type="number" id="c5000" min="0" step="1" placeholder="">
+            </div>
+            <div class="chip">
+                <label><i class="ball ball-black"></i>1W</label>
+                <input type="number" id="c1w" min="0" step="1" placeholder="">
+            </div>
+            <div class="chip">
+                <label><i class="ball ball-orange"></i>5W</label>
+                <input type="number" id="c5w" min="0" step="1" placeholder="">
+            </div>
+            <div class="chip">
+                <label><i class="ball ball-gold"></i>10W</label>
+                <input type="number" id="c10w" min="0" step="1" placeholder="">
+            </div>
+            <div class="chip">
+                <label><i class="ball ball-green"></i>100</label>
+                <input type="number" id="c100" min="0" step="1" placeholder="">
+            </div>
+        </div>
+        <div class="field-grid" style="margin-bottom:8px">
+            <div class="field">
+                <label>剩余黄卡</label>
+                <input type="number" id="recCards" min="0" max="7" step="1" value="7">
+            </div>
+        </div>
+        <div class="calc-bar">
+            <div class="calc-item">
+                <span class="k">桌面筹码</span>
+                <span class="v" id="calcChips">0</span>
+            </div>
+            <div class="calc-item">
+                <span class="k">总码量</span>
+                <span class="v" id="calcTotal">0</span>
+            </div>
+            <div class="calc-item">
+                <span class="k">本场积分</span>
+                <span class="v" id="calcPoints">0</span>
+            </div>
+            <div class="calc-item">
+                <span class="k">需支付</span>
+                <span class="v money" id="calcPay">¥0</span>
+            </div>
+        </div>
+        <div class="btn-row">
+            <button id="btnNext" type="button">录入下一位</button>
+            <button id="btnFinish" type="button" class="secondary">结束录入</button>
+        </div>
+        <div class="tip">
+            <b>规则：</b>总码量 = 桌面筹码 + 剩余黄卡×2万；为还清 7 张黄卡（14万）需补买
+            <b id="tipCards">0</b> 张（每张 10 元）；本场积分 = 剩余筹码 ÷ 2000 向下取整；总码量为 0 时按 <b>−68</b> 计（积分复活）。
+        </div>
+    </div>
+
+    <!-- ===================== 记录表 ===================== -->
+    <div class="block">
+        <div class="block-title">
+            <span>📊 本场记录</span>
+            <span class="hint" id="recCount">已录 0 人</span>
+        </div>
+        <table class="rec-table" id="recTable">
+            <thead>
+                <tr>
+                    <th style="width:34px">序号</th>
+                    <th>玩家昵称</th>
+                    <th style="width:52px">本场积分</th>
+                    <th style="width:66px">总码量</th>
+                    <th style="width:52px">需支付</th>
+                    <th style="width:40px">操作</th>
+                </tr>
+            </thead>
+            <tbody id="recBody"></tbody>
+        </table>
+        <div class="empty-tip" id="recEmpty">还没有录入任何玩家，先在上面录入第一位</div>
+    </div>
+
+    <!-- ===================== 结算区 ===================== -->
+    <div class="block block-green">
+        <div class="block-title">🏆 结算与排名 <span class="hint">录完所有玩家后自动生成</span></div>
+        <div id="settleBox">
+            <div class="empty-tip">录入并「结束录入」后，这里显示前三名、筹码差额与支付合计</div>
+        </div>
+    </div>
+
+    <!-- ===================== 导出 ===================== -->
+    <div class="block">
+        <div class="block-title">💾 导出与备份 <span class="hint">Excel / 截图 / 复制 / JSON</span></div>
+        <div class="btn-row" style="flex-wrap:wrap">
+            <button id="btnCsv" type="button" class="ghost">导出 CSV</button>
+            <button id="btnPng" type="button" class="ghost">导出整表截图</button>
+            <button id="btnCopy" type="button" class="ghost">复制表格文本</button>
+            <button id="btnJson" type="button" class="ghost">导出 JSON</button>
+        </div>
+        <div class="btn-row" style="margin-top:8px">
+            <button id="btnImport" type="button" class="ghost">导入 JSON</button>
+            <button id="btnClear" type="button" class="ghost">清空当前场次</button>
+        </div>
+        <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
+    </div>
+
+    <!-- ===================== 团队协作设置 ===================== -->
+    <div class="block">
+        <div class="block-title">⚙️ 团队协作 <span class="hint">可留空，仅本机使用</span></div>
+        <div class="settings-row">
+            <input type="text" id="cfgEndpoint" placeholder="团队表格接口地址（留空 = 仅本机保存）" maxlength="300" autocomplete="off">
+            <button id="btnSaveCfg" type="button" class="ghost">保存</button>
+        </div>
+        <div class="settings-row">
+            <button id="btnRebind" type="button" class="ghost">重新绑定口令</button>
+            <button id="btnAdmin" type="button" class="ghost">验证管理员</button>
+        </div>
+        <div class="tip">填好接口地址后点「保存」，再点「重新绑定口令」输入团队口令即可。<br>
+            之后<b>录入过程中不会出现任何提示</b>，备份状态只在「结束录入」后的结算面板底部显示一行。</div>
+    </div>
+
+    <!-- ===================== 历史场次 ===================== -->
+    <div class="block">
+        <div class="block-title">🗂 历史场次 <span class="hint" id="hisCount"></span></div>
+        <div class="history-list" id="hisList"></div>
+        <div class="empty-tip" id="hisEmpty">暂无历史场次</div>
+    </div>
+
+</div>
+
+<!-- ===================== 团队访问口令 绑定弹窗 ===================== -->
+<div class="modal-mask" id="bindMask" style="display:none">
+    <div class="modal-box">
+        <div class="modal-title">团队访问口令</div>
+        <div class="modal-desc">首次使用需输入一次团队口令，用于把你的记录汇总到团队表格。输入一次即可，之后不再提示。</div>
+        <input type="text" id="bindToken" placeholder="请输入团队口令" maxlength="64" autocomplete="off">
+        <div class="modal-row">
+            <input type="checkbox" id="bindIsAdmin">
+            <span>我是管理员（需额外验证）</span>
+        </div>
+        <input type="text" id="bindAdminToken" placeholder="管理员口令" maxlength="64" autocomplete="off" style="display:none">
+        <div class="modal-err" id="bindErr"></div>
+        <div class="modal-btns">
+            <button id="bindCancel" type="button" class="secondary">取消</button>
+            <button id="bindOk" type="button">绑定本机</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ==================== 常量与状态 ==================== */
+    var CARD_VALUE = 20000;            // 1 张黄卡 = 2 万筹码
+    var CARDS_INIT = 7;                // 每人初始 7 张黄卡
+    var CARD_DEBT = CARD_VALUE * CARDS_INIT;   // 14 万黄卡债务
+    var POINTS_PER_CHIP = 2000;        // 2000 筹码 = 1 积分
+    var REVIVE_POINTS = -68;           // 总码量为 0（积分复活）时强制记 -68
+    var DIFF_LIMIT = 30000;            // 筹码差额上限 3 万
+    var BASE_CHIPS = 160000;           // 每人初始码 16 万
+    var MAX_HISTORY = 50;              // 本机最多保存 50 场
+    var STORAGE_KEY = 'wc_record_sessions_v1';
+
+    var FACES = [
+        { id: 'c500', label: '500', value: 500 },
+        { id: 'c1000', label: '1000', value: 1000 },
+        { id: 'c5000', label: '5000', value: 5000 },
+        { id: 'c1w', label: '1W', value: 10000 },
+        { id: 'c5w', label: '5W', value: 50000 },
+        { id: 'c10w', label: '10W', value: 100000 },
+        { id: 'c100', label: '100', value: 100 }
+    ];
+
+    // 当前场次数据
+    var session = null;
+    // 正在编辑的行索引（-1 表示新增）
+    var editingIndex = -1;
+
+    /* ==================== DOM 引用 ==================== */
+    var el = {};
+    function $(id) { return document.getElementById(id); }
+
+    function cacheDom() {
+        el.clockDate = $('clockDate');
+        el.clockTime = $('clockTime');
+        el.fDate = $('fDate');
+        el.fSession = $('fSession');
+        el.fTable = $('fTable');
+        el.fExpected = $('fExpected');
+        el.fRecorder = $('fRecorder');
+        el.fReviewer = $('fReviewer');
+        el.fRating = $('fRating');
+        el.sessionHint = $('sessionHint');
+        el.recStep = $('recStep');
+        el.recName = $('recName');
+        el.recCards = $('recCards');
+        el.chipsBox = $('chipsBox');
+        el.calcChips = $('calcChips');
+        el.calcTotal = $('calcTotal');
+        el.calcPoints = $('calcPoints');
+        el.calcPay = $('calcPay');
+        el.tipCards = $('tipCards');
+        el.btnNext = $('btnNext');
+        el.btnFinish = $('btnFinish');
+        el.recBody = $('recBody');
+        el.recTable = $('recTable');
+        el.recEmpty = $('recEmpty');
+        el.recCount = $('recCount');
+        el.settleBox = $('settleBox');
+        el.btnCsv = $('btnCsv');
+        el.btnPng = $('btnPng');
+        el.btnCopy = $('btnCopy');
+        el.btnJson = $('btnJson');
+        el.btnImport = $('btnImport');
+        el.btnClear = $('btnClear');
+        el.fileImport = $('fileImport');
+        el.hisList = $('hisList');
+        el.hisEmpty = $('hisEmpty');
+        el.hisCount = $('hisCount');
+        el.cfgEndpoint = $('cfgEndpoint');
+        el.btnSaveCfg = $('btnSaveCfg');
+        el.btnRebind = $('btnRebind');
+        el.btnAdmin = $('btnAdmin');
+        el.bindMask = $('bindMask');
+        el.bindToken = $('bindToken');
+        el.bindIsAdmin = $('bindIsAdmin');
+        el.bindAdminToken = $('bindAdminToken');
+        el.bindErr = $('bindErr');
+        el.btnBindOk = $('bindOk');
+        el.btnBindCancel = $('bindCancel');
+        el.faceInputs = FACES.map(function (f) { return $(f.id); });
+    }
+
+    /* ==================== 工具函数 ==================== */
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+    // 千分位显示（筹码金额用逗号分隔更好读）
+    function money(n) {
+        var s = String(Math.abs(n));
+        var out = '';
+        while (s.length > 3) {
+            out = ',' + s.slice(-3) + out;
+            s = s.slice(0, -3);
+        }
+        return (n < 0 ? '-' : '') + s + out;
+    }
+
+    function num(v) {
+        var n = parseInt(v, 10);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function todayStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+
+    /* ==================== 核心结算公式 ====================
+     * C        = 总码量 = 桌面筹码 + 剩余黄卡 × 20000
+     * K        = 欠卡数 = max(0, ceil((140000 - C) / 20000))
+     * 支付金额  = K × 10 元
+     * 剩余筹码  = C + K×20000 - 140000
+     * 本场积分  = floor(剩余筹码 / 2000)；C = 0 时强制 -68（积分复活）
+     * 已用纸表 9 人数据验证，9/9 吻合
+     */
+    function calcRow(chips, cards) {
+        var C = chips + cards * CARD_VALUE;
+        var K = 0;
+        if (C < CARD_DEBT) {
+            K = Math.ceil((CARD_DEBT - C) / CARD_VALUE);
+        }
+        var pay = K * 10;
+        var rest = C + K * CARD_VALUE - CARD_DEBT;
+        var points = (C === 0) ? REVIVE_POINTS : Math.floor(rest / POINTS_PER_CHIP);
+        return {
+            chips: chips,
+            cards: cards,
+            total: C,
+            cardGap: K,
+            pay: pay,
+            rest: rest,
+            points: points
+        };
+    }
+
+    /* ==================== 场次与存储 ==================== */
+    function newSession() {
+        return {
+            id: 'S' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+            date: todayStr(),
+            sessionName: '',
+            table: '',
+            expected: 10,
+            recorder: '',
+            reviewer: '',
+            rating: '',
+            deviceId: '',
+            rows: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+    }
+
+    function loadHistory() {
+        try {
+            var raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) { return []; }
+            var list = JSON.parse(raw);
+            return Array.isArray(list) ? list : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveHistory() {
+        try {
+            var list = loadHistory();
+            // 用 id 覆盖同一场，其余保留，最多 50 场
+            var out = [];
+            var replaced = false;
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].id === session.id) {
+                    out.push(JSON.parse(JSON.stringify(session)));
+                    replaced = true;
+                } else {
+                    out.push(list[i]);
+                }
+            }
+            if (!replaced) {
+                out.unshift(JSON.parse(JSON.stringify(session)));
+            }
+            out = out.slice(0, MAX_HISTORY);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(out));
+            renderHistory();
+        } catch (e) {
+            // 本地存储不可用时不影响使用
+        }
+    }
+
+    /* ==================== 场次信息读写 ==================== */
+    function loadSessionToForm() {
+        el.fDate.value = session.date || '';
+        el.fSession.value = session.sessionName || '';
+        el.fTable.value = session.table || '';
+        el.fExpected.value = session.expected || 10;
+        el.fRecorder.value = session.recorder || '';
+        el.fReviewer.value = session.reviewer || '';
+        el.fRating.value = session.rating || '';
+        updateSessionHint();
+    }
+
+    function readFormToSession() {
+        session.date = el.fDate.value.trim() || todayStr();
+        session.sessionName = el.fSession.value.trim();
+        session.table = el.fTable.value.trim();
+        session.expected = Math.max(1, num(el.fExpected.value) || 10);
+        session.recorder = el.fRecorder.value.trim();
+        session.reviewer = el.fReviewer.value.trim();
+        session.rating = el.fRating.value.trim();
+        session.updatedAt = new Date().toISOString();
+        updateSessionHint();
+    }
+
+    function updateSessionHint() {
+        var txt = '应到 ' + (session.expected || 10) + ' 人';
+        if (session.table) { txt += ' · ' + session.table + ' 桌'; }
+        if (session.sessionName) { txt += ' · ' + session.sessionName; }
+        el.sessionHint.textContent = txt;
+    }
+
+    /* ==================== 录入区实时计算 ==================== */
+    function currentChips() {
+        var sum = 0;
+        for (var i = 0; i < FACES.length; i++) {
+            sum += num(el.faceInputs[i].value) * FACES[i].value;
+        }
+        return sum;
+    }
+
+    function currentCards() {
+        var c = num(el.recCards.value);
+        if (c < 0) { c = 0; }
+        if (c > CARDS_INIT) { c = CARDS_INIT; }
+        return c;
+    }
+
+    function refreshCalc() {
+        var chips = currentChips();
+        var cards = currentCards();
+        var r = calcRow(chips, cards);
+        el.calcChips.textContent = money(r.chips);
+        el.calcTotal.textContent = money(r.total);
+        el.calcPoints.textContent = (r.points > 0 ? '+' : '') + r.points;
+        el.calcPoints.className = 'v' + (r.points < 0 ? ' warn' : '');
+        el.calcPay.textContent = '¥' + r.pay;
+        el.tipCards.textContent = r.cardGap;
+        el.recStep.textContent = (editingIndex >= 0 ? '编辑第 ' + (editingIndex + 1) + ' 位' : '第 ' + (session.rows.length + 1) + ' 位');
+        el.btnNext.textContent = (editingIndex >= 0 ? '更新本条' : '录入下一位');
+    }
+
+    function clearEntry() {
+        el.recName.value = '';
+        for (var i = 0; i < FACES.length; i++) {
+            el.faceInputs[i].value = '';
+        }
+        el.recCards.value = CARDS_INIT;
+        editingIndex = -1;
+        refreshCalc();
+        el.recName.focus();
+    }
+
+    /* ==================== 记录表渲染 ==================== */
+    function renderTable() {
+        var rows = session.rows;
+        el.recBody.innerHTML = '';
+        el.recTable.style.display = rows.length ? '' : 'none';
+        el.recEmpty.style.display = rows.length ? 'none' : '';
+        el.recCount.textContent = '已录 ' + rows.length + ' 人' +
+            (rows.length < (session.expected || 10) ? '（还差 ' + ((session.expected || 10) - rows.length) + ' 人）' : '（已满）');
+
+        var medals = rankMap();
+        for (var i = 0; i < rows.length; i++) {
+            var r = rows[i];
+            var tr = document.createElement('tr');
+            var medal = medals[i];
+            if (medal === 1) { tr.className = 'medal-1'; }
+            else if (medal === 2) { tr.className = 'medal-2'; }
+            else if (medal === 3) { tr.className = 'medal-3'; }
+
+            function mk(text, cls) {
+                var cell = document.createElement('td');
+                if (cls) { cell.className = cls; }
+                cell.textContent = text;
+                tr.appendChild(cell);
+                return cell;
+            }
+            mk(String(i + 1));
+            mk(r.name, 'name');
+            mk((r.points > 0 ? '+' : '') + r.points);
+            mk(money(r.total));
+            mk('¥' + r.pay);
+
+            var op = document.createElement('td');
+            var btnEdit = document.createElement('button');
+            btnEdit.type = 'button';
+            btnEdit.className = 'row-edit';
+            btnEdit.textContent = '改';
+            btnEdit.addEventListener('click', (function (idx) {
+                return function () { loadRowToEntry(idx); };
+            })(i));
+            var btnDel = document.createElement('button');
+            btnDel.type = 'button';
+            btnDel.className = 'row-del';
+            btnDel.textContent = '✕';
+            btnDel.addEventListener('click', (function (idx) {
+                return function () { deleteRow(idx); };
+            })(i));
+            op.appendChild(btnEdit);
+            op.appendChild(btnDel);
+            tr.appendChild(op);
+            el.recBody.appendChild(tr);
+        }
+    }
+
+    // 返回每行对应的名次（1/2/3 或 0），并列同名次
+    function rankMap() {
+        var idx = [];
+        for (var i = 0; i < session.rows.length; i++) { idx.push(i); }
+        idx.sort(function (a, b) {
+            return session.rows[b].total - session.rows[a].total;
+        });
+        var map = {};
+        var lastTotal = null, lastRank = 0;
+        for (var k = 0; k < idx.length; k++) {
+            var i = idx[k];
+            var t = session.rows[i].total;
+            var rank = (lastTotal !== null && t === lastTotal) ? lastRank : k + 1;
+            map[i] = rank;
+            lastTotal = t;
+            lastRank = rank;
+        }
+        return map;
+    }
+
+    function loadRowToEntry(idx) {
+        var r = session.rows[idx];
+        editingIndex = idx;
+        el.recName.value = r.name;
+        // 还原面额：按最大面额贪心拆分
+        var rest = r.chips;
+        for (var i = 0; i < FACES.length; i++) {
+            var f = FACES[i];
+            var cnt = Math.floor(rest / f.value);
+            el.faceInputs[i].value = cnt > 0 ? String(cnt) : '';
+            rest -= cnt * f.value;
+        }
+        el.recCards.value = r.cards;
+        refreshCalc();
+        el.recName.focus();
+        el.recName.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function deleteRow(idx) {
+        var name = session.rows[idx].name;
+        if (!window.confirm('删除「' + name + '」这一条？')) { return; }
+        session.rows.splice(idx, 1);
+        if (editingIndex === idx) { editingIndex = -1; }
+        else if (editingIndex > idx) { editingIndex--; }
+        session.updatedAt = new Date().toISOString();
+        renderAll();
+        saveHistory();
+    }
+
+    /* ==================== 结算渲染 ==================== */
+    function calcSummary() {
+        var sumTotal = 0, sumPay = 0;
+        for (var i = 0; i < session.rows.length; i++) {
+            sumTotal += session.rows[i].total;
+            sumPay += session.rows[i].pay;
+        }
+        var expected = session.expected || 10;
+        var diff = sumTotal - BASE_CHIPS * expected;
+        return {
+            sumTotal: sumTotal,
+            sumPay: sumPay,
+            diff: diff,
+            expected: expected,
+            count: session.rows.length
+        };
+    }
+
+    function renderSettle() {
+        if (!session.rows.length) {
+            el.settleBox.innerHTML = '<div class="empty-tip">录入并「结束录入」后，这里显示前三名、筹码差额与支付合计</div>';
+            return;
+        }
+        var s = calcSummary();
+        var medals = rankMap();
+        var top = [];
+        for (var i = 0; i < session.rows.length; i++) {
+            if (medals[i] && medals[i] <= 3) {
+                top.push({ rank: medals[i], row: session.rows[i] });
+            }
+        }
+        top.sort(function (a, b) { return a.rank - b.rank; });
+
+        var html = '';
+        html += '<div class="rank-row">';
+        for (var t = 0; t < top.length; t++) {
+            var badge = top[t].rank === 1 ? '🥇 第一名' : (top[t].rank === 2 ? '🥈 第二名' : '🥉 第三名');
+            html += '<div class="rank-card"><span class="rk">' + badge + '</span>' +
+                '<span class="rv">' + escapeHtml(top[t].row.name) + '</span>' +
+                '<span class="rp">' + money(top[t].row.total) + ' · ' +
+                (top[t].row.points > 0 ? '+' : '') + top[t].row.points + ' 分</span></div>';
+        }
+        html += '</div>';
+
+        var diffCls = s.diff > DIFF_LIMIT ? 'bad' : 'good';
+        var diffTxt = s.diff > DIFF_LIMIT ? '超了 ' + money(s.diff - DIFF_LIMIT) + '，需复核！' : '合格';
+        html += '<div class="check-line ' + diffCls + '">' +
+            '筹码差额：Σ总码量 <b>' + money(s.sumTotal) + '</b> − 16万×' + s.expected + ' = <b>' +
+            (s.diff > 0 ? '+' : '') + money(s.diff) + '</b>（上限 3 万）' + diffTxt +
+            '</div>';
+        html += '<div class="check-line">需支付合计：<b>¥' + money(s.sumPay) + '</b>　|　已录 <b>' +
+            s.count + '</b> / 应到 ' + s.expected + ' 人' +
+            (s.count < s.expected ? '（还差 ' + (s.expected - s.count) + ' 人）' : '') +
+            '</div>';
+        // 备份状态：整个页面唯一允许出现备份信息的位置
+        html += Sync.statusHtml();
+        el.settleBox.innerHTML = html;
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* ==================== 整体刷新 ==================== */
+    function renderAll() {
+        renderTable();
+        renderSettle();
+        refreshCalc();
+    }
+
+    /* ==================== 历史场次 ==================== */
+    function renderHistory() {
+        var list = loadHistory();
+        // 角色过滤：普通用户只看到自己录入的；管理员可看到全部
+        if (!Sync.isAdmin) {
+            list = list.filter(function (x) {
+                return !x.deviceId || x.deviceId === Sync.deviceId;
+            });
+        }
+        el.hisList.innerHTML = '';
+        el.hisEmpty.style.display = list.length ? 'none' : '';
+        el.hisCount.textContent = list.length ? ('本机已存 ' + list.length + ' 场') : '';
+        for (var i = 0; i < list.length; i++) {
+            (function (item) {
+                var div = document.createElement('div');
+                div.className = 'history-item' + (item.id === session.id ? ' cur' : '');
+                var main = document.createElement('div');
+                main.className = 'hi-main';
+                var title = (item.date || '') + ' ' + (item.sessionName || '') + ' ' + (item.table || '') + ' ' +
+                    (item.rows && item.rows.length ? item.rows.length + '人' : '');
+                main.textContent = title;
+                var sub = document.createElement('div');
+                sub.className = 'hi-sub';
+                var sum = 0;
+                if (item.rows) { for (var k = 0; k < item.rows.length; k++) { sum += item.rows[k].total; } }
+                sub.textContent = (item.expected || 10) + '人制';
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'row-edit';
+                btn.textContent = '载入';
+                btn.addEventListener('click', function () { loadSession(item); });
+                var btnDel = document.createElement('button');
+                btnDel.type = 'button';
+                btnDel.className = 'row-del';
+                btnDel.textContent = '✕';
+                btnDel.addEventListener('click', function () {
+                    if (!window.confirm('删除这场记录？')) { return; }
+                    var all = loadHistory().filter(function (x) { return x.id !== item.id; });
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(all)); } catch (e) { }
+                    renderHistory();
+                });
+                div.appendChild(main);
+                div.appendChild(sub);
+                div.appendChild(btn);
+                div.appendChild(btnDel);
+                el.hisList.appendChild(div);
+            })(list[i]);
+        }
+    }
+
+    function loadSession(item) {
+        session = JSON.parse(JSON.stringify(item));
+        editingIndex = -1;
+        loadSessionToForm();
+        renderAll();
+        saveHistory();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ==================== 导出 ==================== */
+    function buildTableRows() {
+        var s = calcSummary();
+        var medals = rankMap();
+        var lines = [];
+        lines.push(['序号', '玩家昵称', '本场积分', '总码量', '需支付']);
+        for (var i = 0; i < session.rows.length; i++) {
+            var r = session.rows[i];
+            var medal = medals[i] && medals[i] <= 3 ? ['🥇', '🥈', '🥉'][medals[i] - 1] + ' ' : '';
+            lines.push([String(i + 1), medal + r.name, String(r.points), String(r.total), '¥' + r.pay]);
+        }
+        lines.push(['', '合计', '', String(s.sumTotal), '¥' + s.sumPay]);
+        lines.push(['', '筹码差额（Σ总码量 − 16万×' + s.expected + '）', '', String(s.diff), s.diff > DIFF_LIMIT ? '超3万需复核' : '合格']);
+        return lines;
+    }
+
+    function download(filename, content, mime) {
+        var blob = new Blob([content], { type: mime });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    function exportCsv() {
+        if (!session.rows.length) { alert('还没有录入任何玩家'); return; }
+        readFormToSession();
+        var lines = buildTableRows();
+        var meta = [
+            ['水上俱乐部 · 活动签到与积分记录表'],
+            ['日期', session.date, '场次', session.sessionName, '桌号', session.table],
+            ['应到人数', String(session.expected), '记录人', session.recorder, '审核人', session.reviewer, '评分', session.rating]
+        ];
+        var out = [];
+        for (var i = 0; i < meta.length; i++) {
+            out.push(meta[i].map(csvCell).join(','));
+        }
+        out.push('');
+        for (var j = 0; j < lines.length; j++) {
+            out.push(lines[j].map(csvCell).join(','));
+        }
+        // UTF-8 BOM，保证 Excel 打开中文不乱码
+        var csv = '﻿' + out.join('\r\n');
+        download(fileBase(session) + '.csv', csv, 'text/csv;charset=utf-8');
+    }
+
+    function csvCell(v) {
+        var s = String(v === undefined || v === null ? '' : v);
+        if (/[",\n]/.test(s)) {
+            return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+    }
+
+    function exportJson() {
+        readFormToSession();
+        download(fileBase(session) + '.json', JSON.stringify(session, null, 2), 'application/json;charset=utf-8');
+    }
+
+    function copyText() {
+        if (!session.rows.length) { alert('还没有录入任何玩家'); return; }
+        readFormToSession();
+        var lines = buildTableRows();
+        var txt = lines.map(function (row) {
+            return row.join('\t');
+        }).join('\n');
+        var ok = false;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(txt).then(function () {
+                window.alert('已复制到剪贴板，可直接粘贴到微信或 Excel');
+            })['catch'](function () {
+                fallbackCopy(txt);
+            });
+            ok = true;
+        } else {
+            fallbackCopy(txt);
+        }
+        if (!ok) { fallbackCopy(txt); }
+    }
+
+    function fallbackCopy(txt) {
+        var ta = document.createElement('textarea');
+        ta.value = txt;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            document.execCommand('copy');
+            window.alert('已复制到剪贴板');
+        } catch (e) {
+            window.alert('复制失败，请手动选择表格内容复制');
+        }
+        document.body.removeChild(ta);
+    }
+
+    /* ==================== 整表 PNG 截图（canvas 自绘，零依赖） ==================== */
+    function exportPng() {
+        if (!session.rows.length) { alert('还没有录入任何玩家'); return; }
+        readFormToSession();
+        var s = calcSummary();
+        var medals = rankMap();
+
+        // 取前三名
+        var top = [];
+        for (var i = 0; i < session.rows.length; i++) {
+            if (medals[i] && medals[i] <= 3) { top.push({ rank: medals[i], row: session.rows[i] }); }
+        }
+        top.sort(function (a, b) { return a.rank - b.rank; });
+
+        var rowH = 34;                       // 数据行高
+        var headH = 30;                      // 表头高
+        var W = 900;
+        var titleH = 96;                     // 标题 + 场次信息
+        var medalH = 70;                     // 三名区
+        var checkH = 92;                     // 差额/合计区
+        var footH = 46;                      // 记录人/审核人
+        var H = titleH + headH + rowH * session.rows.length + medalH + checkH + footH + 28;
+
+        var canvas = document.createElement('canvas');
+        canvas.width = W * 2;
+        canvas.height = H * 2;
+        var ctx = canvas.getContext('2d');
+        ctx.scale(2, 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+
+        var FONT = '"PingFang SC","Microsoft YaHei",sans-serif';
+        function text(txt, x, y, size, color, bold, align) {
+            ctx.font = (bold ? 'bold ' : '') + size + 'px ' + FONT;
+            ctx.fillStyle = color;
+            ctx.textAlign = align || 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(txt, x, y);
+        }
+
+        // 标题
+        text('水上俱乐部 · 活动签到与积分记录表', W / 2, 28, 22, '#1f6fd0', true, 'center');
+        // 场次信息
+        text('日期：' + (session.date || '') + '　　场次：' + (session.sessionName || '') +
+            '　　桌号：' + (session.table || ''), W / 2, 58, 14, '#455a75', false, 'center');
+        text('应到人数：' + s.expected + ' 人', W / 2, 80, 13, '#7a8ba3', false, 'center');
+
+        // 表头
+        var y = titleH;
+        ctx.fillStyle = '#eaf3ff';
+        ctx.fillRect(24, y, W - 48, headH);
+        ctx.strokeStyle = '#cfe4ff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(24, y, W - 48, headH);
+        var cols = [
+            { t: '序号', w: 60, align: 'center' },
+            { t: '玩家昵称', w: 260, align: 'left' },
+            { t: '本场积分', w: 140, align: 'center' },
+            { t: '总码量', w: 180, align: 'center' },
+            { t: '需支付', w: 140, align: 'center' }
+        ];
+        var totalW = 60 + 260 + 140 + 180 + 140;
+        var scaleX = (W - 48) / totalW;
+        var cx = 24;
+        for (var c = 0; c < cols.length; c++) {
+            var cw = cols[c].w * scaleX;
+            var tx = cols[c].align === 'center' ? cx + cw / 2 : cx + 8;
+            text(cols[c].t, tx, y + headH / 2, 14, '#1f6fd0', true, cols[c].align);
+            cx += cw;
+        }
+
+        // 数据行
+        for (var r = 0; r < session.rows.length; r++) {
+            var row = session.rows[r];
+            var ry = y + headH + rowH * r;
+            if (medals[r] === 1) { ctx.fillStyle = '#fff8e1'; ctx.fillRect(24, ry, W - 48, rowH); }
+            else if (medals[r] === 2) { ctx.fillStyle = '#f7f9fc'; ctx.fillRect(24, ry, W - 48, rowH); }
+            else if (medals[r] === 3) { ctx.fillStyle = '#fdf6ef'; ctx.fillRect(24, ry, W - 48, rowH); }
+            ctx.strokeStyle = '#e3eefc';
+            ctx.strokeRect(24, ry, W - 48, rowH);
+            var ccx = 24;
+            var vals = [
+                String(r + 1),
+                row.name,
+                (row.points > 0 ? '+' : '') + row.points,
+                money(row.total),
+                '¥' + row.pay
+            ];
+            for (var v = 0; v < cols.length; v++) {
+                var cw2 = cols[v].w * scaleX;
+                var tx2 = cols[v].align === 'center' ? ccx + cw2 / 2 : ccx + 8;
+                var isPts = (v === 2);
+                text(vals[v], tx2, ry + rowH / 2, isPts ? 16 : 14,
+                    isPts ? (row.points < 0 ? '#b0261e' : '#1f6fd0') : '#22344d',
+                    isPts, cols[v].align);
+                ccx += cw2;
+            }
+        }
+
+        // 三名区
+        var my = y + headH + rowH * session.rows.length + 12;
+        var medalNames = ['🥇 第一名', '🥈 第二名', '🥉 第三名'];
+        for (var m = 0; m < top.length; m++) {
+            var bx = 24 + m * ((W - 48) / 3);
+            var bw = (W - 48) / 3 - 10;
+            ctx.fillStyle = '#fffdf5';
+            ctx.fillRect(bx, my, bw, medalH - 12);
+            ctx.strokeStyle = '#ffd9a6';
+            ctx.strokeRect(bx, my, bw, medalH - 12);
+            text(medalNames[top[m].rank - 1], bx + bw / 2, my + 18, 13, '#8a9bb3', false, 'center');
+            text(top[m].row.name, bx + bw / 2, my + 40, 17, '#1f6fd0', true, 'center');
+            text(money(top[m].row.total) + ' · ' + (top[m].row.points > 0 ? '+' : '') + top[m].row.points + ' 分',
+                bx + bw / 2, my + 60, 12, '#b0261e', false, 'center');
+        }
+
+        // 差额与合计
+        var cy = my + medalH;
+        var diffBad = s.diff > DIFF_LIMIT;
+        ctx.fillStyle = diffBad ? '#fff6f5' : '#f4fbf5';
+        ctx.fillRect(24, cy, W - 48, checkH - 16);
+        ctx.strokeStyle = diffBad ? '#e53935' : '#bfe3c4';
+        ctx.strokeRect(24, cy, W - 48, checkH - 16);
+        text('筹码差额：Σ总码量 ' + money(s.sumTotal) + ' − 16万×' + s.expected + ' = ' +
+            (s.diff > 0 ? '+' : '') + money(s.diff) + '（上限 3 万）' + (diffBad ? '　超了，需复核！' : '　合格'),
+            34, cy + 22, 14, diffBad ? '#c62828' : '#2e7d32', true);
+        text('需支付合计：¥' + money(s.sumPay) + '　|　已录 ' + s.count + ' / 应到 ' + s.expected + ' 人' +
+            (s.count < s.expected ? '（还差 ' + (s.expected - s.count) + ' 人）' : ''),
+            34, cy + 50, 14, '#455a75', false);
+
+        // 记录人 / 审核人 / 评分
+        var fy = cy + checkH;
+        text('记录人：' + (session.recorder || ''), 34, fy + 14, 13, '#455a75');
+        text('审核人：' + (session.reviewer || ''), 300, fy + 14, 13, '#455a75');
+        text('评分：' + (session.rating || ''), 560, fy + 14, 13, '#455a75');
+
+        var url = canvas.toDataURL('image/png');
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = fileBase(session) + '.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showPngPreview(canvas, fileBase(session) + '.png');
+    }
+
+    // 截图预览层：移动端可长按图片保存到相册
+    function showPngPreview(canvas, filename) {
+        var mask = document.createElement('div');
+        mask.className = 'png-mask';
+        var wrap = document.createElement('div');
+        wrap.className = 'png-wrap';
+        canvas.className = 'png-canvas';
+        var tip = document.createElement('div');
+        tip.className = 'png-tip';
+        tip.textContent = '长按图片可保存到相册，也可点下方按钮下载';
+        var btns = document.createElement('div');
+        btns.className = 'png-btns';
+        var dl = document.createElement('button');
+        dl.type = 'button';
+        dl.textContent = '下载 PNG';
+        dl.addEventListener('click', function () {
+            var a2 = document.createElement('a');
+            a2.href = canvas.toDataURL('image/png');
+            a2.download = filename;
+            document.body.appendChild(a2);
+            a2.click();
+            document.body.removeChild(a2);
+        });
+        var cls = document.createElement('button');
+        cls.type = 'button';
+        cls.className = 'secondary';
+        cls.textContent = '关闭';
+        cls.addEventListener('click', function () {
+            if (mask.parentNode) { mask.parentNode.removeChild(mask); }
+        });
+        btns.appendChild(dl);
+        btns.appendChild(cls);
+        wrap.appendChild(canvas);
+        wrap.appendChild(tip);
+        wrap.appendChild(btns);
+        mask.appendChild(wrap);
+        mask.addEventListener('click', function (e) {
+            if (e.target === mask && mask.parentNode) { mask.parentNode.removeChild(mask); }
+        });
+        document.body.appendChild(mask);
+    }
+
+    // 场次文件名（独立函数，避免依赖 session 实例属性）
+    function fileBase(s) {
+        var parts = [s.date || '未填日期'];
+        if (s.sessionName) { parts.push(s.sessionName); }
+        if (s.table) { parts.push(s.table + '桌'); }
+        parts.push('积分记录表');
+        return parts.join('_').replace(/[\\/:*?"<>|]/g, '');
+    }
+
+    /* ==================== 事件绑定 ==================== */
+    function bindEvents() {
+        // 面额与黄卡实时计算
+        for (var i = 0; i < el.faceInputs.length; i++) {
+            el.faceInputs[i].addEventListener('input', refreshCalc);
+        }
+        el.recCards.addEventListener('input', refreshCalc);
+        el.recName.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); doNext(); }
+        });
+
+        el.btnNext.addEventListener('click', doNext);
+        el.btnFinish.addEventListener('click', doFinish);
+        el.btnCsv.addEventListener('click', exportCsv);
+        el.btnPng.addEventListener('click', exportPng);
+        el.btnCopy.addEventListener('click', copyText);
+        el.btnJson.addEventListener('click', exportJson);
+
+        /* ---------- 团队协作设置 ---------- */
+        el.cfgEndpoint.value = Sync.getEndpoint();
+        el.btnSaveCfg.addEventListener('click', function () {
+            var v = el.cfgEndpoint.value.trim();
+            Sync.lsSet(CFG.endpointKey, v);
+            Sync.enabled = !!(v && Sync.getToken());
+            window.alert(v ? '接口地址已保存' + (Sync.getToken() ? '' : '，请再点「重新绑定口令」输入团队口令') : '已切换为仅本机保存');
+            renderAll();
+        });
+        el.btnRebind.addEventListener('click', function () { openBind(false); });
+        el.btnAdmin.addEventListener('click', function () { openBind(true); });
+
+        /* ---------- 绑定弹窗 ---------- */
+        el.bindIsAdmin.addEventListener('change', function () {
+            el.bindAdminToken.style.display = el.bindIsAdmin.checked ? '' : 'none';
+        });
+        el.btnBindCancel.addEventListener('click', function () { closeBind(); });
+        el.btnBindOk.addEventListener('click', function () {
+            var token = el.bindToken.value.trim();
+            if (!token) { el.bindErr.textContent = '请输入团队口令'; return; }
+            var adminToken = el.bindIsAdmin.checked ? el.bindAdminToken.value.trim() : '';
+            if (el.bindIsAdmin.checked && !adminToken) { el.bindErr.textContent = '请输入管理员口令'; return; }
+            el.bindErr.textContent = '正在验证…';
+            el.btnBindOk.disabled = true;
+            Sync.bind(token, adminToken, function (ok, msg) {
+                el.btnBindOk.disabled = false;
+                if (!ok) { el.bindErr.textContent = msg; return; }
+                el.bindErr.textContent = '';
+                closeBind();
+                el.bindToken.value = '';
+                el.bindAdminToken.value = '';
+                el.bindIsAdmin.checked = false;
+                el.bindAdminToken.style.display = 'none';
+                renderAll();
+                window.alert(msg || '绑定成功');
+            });
+        });
+
+        el.btnImport.addEventListener('click', function () { el.fileImport.click(); });
+        el.fileImport.addEventListener('change', function () {
+            var f = el.fileImport.files && el.fileImport.files[0];
+            if (!f) { return; }
+            var reader = new FileReader();
+            reader.onload = function () {
+                try {
+                    var data = JSON.parse(reader.result);
+                    if (!data || !Array.isArray(data.rows)) { throw new Error('格式不对'); }
+                    session = data;
+                    editingIndex = -1;
+                    loadSessionToForm();
+                    renderAll();
+                    saveHistory();
+                    window.alert('导入成功');
+                } catch (e) {
+                    window.alert('导入失败：文件格式不正确');
+                }
+                el.fileImport.value = '';
+            };
+            reader.readAsText(f, 'utf-8');
+        });
+
+        el.btnClear.addEventListener('click', function () {
+            if (!session.rows.length) { alert('当前场次没有数据'); return; }
+            if (!window.confirm('清空当前场次的所有录入记录？此操作不可撤销。')) { return; }
+            session.rows = [];
+            editingIndex = -1;
+            clearEntry();
+            renderAll();
+            saveHistory();
+        });
+
+        // 场次信息变化即保存
+        var formIds = ['fDate', 'fSession', 'fTable', 'fExpected', 'fRecorder', 'fReviewer', 'fRating'];
+        for (var k = 0; k < formIds.length; k++) {
+            el[formIds[k]].addEventListener('change', function () {
+                readFormToSession();
+                renderSettle();
+                saveHistory();
+            });
+        }
+    }
+
+    /* ==================== 录入与结束 ==================== */
+    function doNext() {
+        var name = el.recName.value.trim();
+        if (!name) {
+            window.alert('请先填写玩家昵称');
+            el.recName.focus();
+            return;
+        }
+        var chips = currentChips();
+        var cards = currentCards();
+        var r = calcRow(chips, cards);
+        var row = {
+            name: name,
+            chips: r.chips,
+            cards: r.cards,
+            total: r.total,
+            cardGap: r.cardGap,
+            pay: r.pay,
+            rest: r.rest,
+            points: r.points
+        };
+        if (editingIndex >= 0) {
+            session.rows[editingIndex] = row;
+            editingIndex = -1;
+        } else {
+            session.rows.push(row);
+        }
+        session.updatedAt = new Date().toISOString();
+        readFormToSession();
+        clearEntry();
+        renderAll();
+        saveHistory();
+        // 备份到团队表格（本地模式自动跳过，界面无任何提示）
+        Sync.enqueue({
+            type: 'record',
+            key: sessionKeyOf(session) + '|' + row.name,
+            session: sessionMetaOf(session),
+            row: row
+        });
+    }
+
+    function doFinish() {
+        readFormToSession();
+        if (!session.rows.length) {
+            window.alert('还没有录入任何玩家，无法结束录入');
+            return;
+        }
+        var s = calcSummary();
+        var msg = '已录 ' + s.count + ' 人';
+        if (s.count < s.expected) {
+            msg += '，还差 ' + (s.expected - s.count) + ' 人（应到 ' + s.expected + ' 人）';
+        }
+        msg += '。确认结束录入并生成结算？';
+        if (!window.confirm(msg)) { return; }
+        renderSettle();
+        saveHistory();
+        // 场次元信息一并备份（飞书里形成一张完整的场次行）
+        Sync.enqueue({
+            type: 'session',
+            key: sessionKeyOf(session),
+            session: sessionMetaOf(session)
+        });
+        el.settleBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    /* ==================== 时钟 ==================== */
+    function startClock() {
+        function tick() {
+            var now = new Date();
+            el.clockDate.textContent = now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate());
+            el.clockTime.textContent = pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + ':' + pad2(now.getSeconds());
+        }
+        tick();
+        setInterval(tick, 1000);
+    }
+
+    /* ==================== 调试接口（只读，供控制台排查） ==================== */
+    window.__recordDebug = {
+        getSession: function () { return session; },
+        getTableRows: function () { return buildTableRows(); },
+        calcRow: calcRow,
+        calcSummary: calcSummary,
+        sha256: function (s) { return Sha256.hash(s); },
+        syncStatus: function () { return Sync.status(); },
+        syncIsAdmin: function () { return Sync.isAdmin; },
+        syncDeviceId: function () { return Sync.deviceId; }
+    };
+
+    /* ==================== 场次标识与元信息（备份用） ==================== */
+    function sessionKeyOf(s) {
+        return (s.date || '') + '|' + (s.sessionName || '') + '|' + (s.table || '');
+    }
+    function sessionMetaOf(s) {
+        return {
+            date: s.date || '',
+            sessionName: s.sessionName || '',
+            table: s.table || '',
+            expected: s.expected || 10,
+            recorder: s.recorder || '',
+            reviewer: s.reviewer || '',
+            rating: s.rating || '',
+            deviceId: Sync.deviceId || ''
+        };
+    }
+
+    /* ==================== 团队协作 · 同步层 ====================
+     * 硬性设计要求（v1.2）：
+     *  1) 录入过程中界面**不出现任何**同步/上传/云端字样
+     *  2) 备份状态**只在结束录入后的结算面板底部**显示一行
+     *  3) 失败不阻塞：本地永远是主数据源，云端挂了照常算账
+     *  4) 口令明文永不落盘，只保存 SHA-256 哈希
+     */
+    var CFG = {
+        endpointKey: 'wc_sync_endpoint',
+        tokenKey: 'wc_sync_token_hash',
+        adminKey: 'wc_sync_admin_hash',
+        deviceKey: 'wc_sync_device_id',
+        queueKey: 'wc_sync_queue'
+    };
+
+    /* 纯 JS SHA-256（file:// 协议下 crypto.subtle 不可用，必须自备实现） */
+    var Sha256 = (function () {
+        var K = [
+            0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+            0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+            0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+            0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+            0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+            0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+            0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+            0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+        ];
+        function rr(v, n) { return (v >>> n) | (v << (32 - n)); }
+        function utf8(str) {
+            var out = [], i, c;
+            for (i = 0; i < str.length; i++) {
+                c = str.charCodeAt(i);
+                if (c < 128) { out.push(c); }
+                else if (c < 2048) { out.push(192 | (c >> 6), 128 | (c & 63)); }
+                else {
+                    if (c >= 0xD800 && c <= 0xDBFF && i + 1 < str.length) {
+                        var c2 = str.charCodeAt(i + 1);
+                        out.push(240 | (c >> 12), 128 | ((c >> 6) & 63), 128 | (c & 63));
+                        out.push(240 | (c2 >> 12), 128 | ((c2 >> 6) & 63), 128 | (c2 & 63));
+                        i++;
+                        continue;
+                    }
+                    out.push(224 | (c >> 12), 128 | ((c >> 6) & 63), 128 | (c & 63));
+                }
+            }
+            return out;
+        }
+        function hex(n) {
+            var s = '';
+            for (var i = 7; i >= 0; i--) { s += ((n >>> (i * 4)) & 15).toString(16); }
+            return s;
+        }
+        return {
+            hash: function (msg) {
+                var bytes = utf8(String(msg));
+                var bitLen = bytes.length * 8;
+                bytes.push(0x80);
+                while (bytes.length % 64 !== 56) { bytes.push(0); }
+                for (var i = 7; i >= 0; i--) { bytes.push(Math.floor(bitLen / Math.pow(2, i * 8)) & 255); }
+                var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+                var w = new Array(64);
+                for (var blk = 0; blk < bytes.length; blk += 64) {
+                    for (var t = 0; t < 16; t++) {
+                        w[t] = (bytes[blk + t * 4] << 24) | (bytes[blk + t * 4 + 1] << 16) |
+                            (bytes[blk + t * 4 + 2] << 8) | bytes[blk + t * 4 + 3];
+                    }
+                    for (var j = 16; j < 64; j++) {
+                        var s0 = rr(w[j - 15], 7) ^ rr(w[j - 15], 18) ^ (w[j - 15] >>> 3);
+                        var s1 = rr(w[j - 2], 17) ^ rr(w[j - 2], 19) ^ (w[j - 2] >>> 10);
+                        w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0;
+                    }
+                    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+                    for (var k = 0; k < 64; k++) {
+                        var S1 = rr(e, 6) ^ rr(e, 11) ^ rr(e, 25);
+                        var ch = (e & f) ^ (~e & g);
+                        var t1 = (h + S1 + ch + K[k] + w[k]) | 0;
+                        var S0 = rr(a, 2) ^ rr(a, 13) ^ rr(a, 22);
+                        var maj = (a & b) ^ (a & c) ^ (b & c);
+                        var t2 = (S0 + maj) | 0;
+                        h = g; g = f; f = e; e = (d + t1) | 0;
+                        d = c; c = b; b = a; a = (t1 + t2) | 0;
+                    }
+                    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+                    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+                }
+                var out2 = '';
+                for (var m = 0; m < 8; m++) { out2 += hex(H[m]); }
+                return out2;
+            }
+        };
+    })();
+
+    var Sync = {
+        queue: [],
+        enabled: false,
+        isAdmin: false,
+        deviceId: '',
+        lastError: '',
+        retry: 0,
+        timer: null,
+        MAX_QUEUE: 500,
+
+        /* ---------- 本地配置读写 ---------- */
+        ls: function (k) {
+            try { return localStorage.getItem(k) || ''; } catch (e) { return ''; }
+        },
+        lsSet: function (k, v) {
+            try { localStorage.setItem(k, v); } catch (e) { }
+        },
+        getEndpoint: function () { return this.ls(CFG.endpointKey).trim(); },
+        getToken: function () { return this.ls(CFG.tokenKey); },
+        getAdminHash: function () { return this.ls(CFG.adminKey); },
+        getDeviceId: function () {
+            var id = this.ls(CFG.deviceKey);
+            if (!id) {
+                id = 'd' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+                this.lsSet(CFG.deviceKey, id);
+            }
+            return id;
+        },
+        loadQueue: function () {
+            try {
+                var q = JSON.parse(this.ls(CFG.queueKey) || '[]');
+                return Array.isArray(q) ? q : [];
+            } catch (e) { return []; }
+        },
+        saveQueue: function () {
+            this.lsSet(CFG.queueKey, JSON.stringify(this.queue));
+        },
+
+        /* ---------- 初始化 ---------- */
+        init: function () {
+            this.deviceId = this.getDeviceId();
+            this.queue = this.loadQueue();
+            this.isAdmin = !!this.getAdminHash();
+            this.enabled = !!(this.getEndpoint() && this.getToken());
+            var self = this;
+            // 后台定时冲刷（失败自动退避重试）
+            this.timer = setInterval(function () { self.flush(); }, 5000);
+            // 页面关闭 / 切后台时冲刷一次
+            window.addEventListener('beforeunload', function () { self.flush(true); });
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'hidden') { self.flush(true); }
+            });
+        },
+
+        /* ---------- 记录入队 ---------- */
+        enqueue: function (payload) {
+            if (!this.enabled) { return; }          // 本地模式不入队
+            this.queue.push(payload);
+            if (this.queue.length > this.MAX_QUEUE) { this.queue.shift(); }
+            this.saveQueue();
+            this.schedule(800);
+        },
+
+        /* ---------- 推送 ---------- */
+        schedule: function (delay) {
+            var self = this;
+            if (this.timer2) { clearTimeout(this.timer2); }
+            this.timer2 = setTimeout(function () { self.flush(); }, delay || 5000);
+        },
+
+        flush: function (beaconMode) {
+            if (!this.enabled || !this.queue.length) { return; }
+            var self = this;
+            var endpoint = this.getEndpoint();
+            if (!endpoint) { return; }
+            var batch = this.queue.slice(0, 20);
+            var body = JSON.stringify({
+                action: 'sync',
+                deviceId: this.deviceId,
+                tokenHash: this.getToken(),
+                adminHash: this.getAdminHash(),
+                items: batch
+            });
+
+            function ok() {
+                self.queue.splice(0, batch.length);
+                self.saveQueue();
+                self.lastError = '';
+                self.retry = 0;
+                if (self.queue.length) { self.schedule(1500); }
+            }
+            function fail(msg, code) {
+                self.lastError = msg || '';
+                self.retry++;
+                // 口令错误属于不可重试的异常：停下并保留队列，等待用户处理
+                if (code === 'TOKEN_INVALID' || code === 'DEVICE_DISABLED') { return; }
+                var delay = Math.min(300000, 1000 * Math.pow(2, Math.min(self.retry, 8)));
+                self.schedule(delay);
+            }
+
+            if (beaconMode && navigator.sendBeacon) {
+                try {
+                    var blob = new Blob([body], { type: 'application/json' });
+                    if (navigator.sendBeacon(endpoint, blob)) { ok(); }
+                    return;
+                } catch (e) { /* 落回 fetch */ }
+            }
+
+            if (typeof fetch === 'function') {
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: body
+                }).then(function (res) {
+                    return res.json().catch(function () { return { ok: false, message: '返回格式错误' }; });
+                }).then(function (data) {
+                    if (data && data.ok) { ok(); }
+                    else { fail(data && data.message, data && data.code); }
+                })['catch'](function (e) {
+                    fail('网络异常：' + (e && e.message ? e.message : '请检查网络'));
+                });
+            } else {
+                // 极老环境兜底：XMLHttpRequest
+                try {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', endpoint, true);
+                    xhr.setRequestHeader('Content-Type', 'application/json');
+                    xhr.onload = function () {
+                        var data = null;
+                        try { data = JSON.parse(xhr.responseText); } catch (e) { }
+                        if (data && data.ok) { ok(); } else { fail(data && data.message, data && data.code); }
+                    };
+                    xhr.onerror = function () { fail('网络异常'); };
+                    xhr.send(body);
+                } catch (e) { fail('网络异常'); }
+            }
+        },
+
+        /* ---------- 绑定（校验口令 / 管理员身份） ---------- */
+        bind: function (token, adminToken, cb) {
+            var self = this;
+            var endpoint = this.getEndpoint();
+            if (!endpoint) {
+                cb(false, '请先在「团队协作」里填写接口地址');
+                return;
+            }
+            var tokenHash = Sha256.hash(token);
+            var adminHash = adminToken ? Sha256.hash(adminToken) : '';
+            try {
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'bind',
+                        deviceId: this.deviceId,
+                        tokenHash: tokenHash,
+                        adminHash: adminHash
+                    })
+                }).then(function (res) {
+                    return res.json().catch(function () { return { ok: false, message: '返回格式错误' }; });
+                }).then(function (data) {
+                    if (data && data.ok) {
+                        self.lsSet(CFG.tokenKey, tokenHash);
+                        if (data.role === 'admin') {
+                            self.lsSet(CFG.adminKey, adminHash);
+                            self.isAdmin = true;
+                        } else {
+                            // 管理员口令错误时静默降级为普通用户，不暴露管理员账号存在
+                            self.lsSet(CFG.adminKey, '');
+                            self.isAdmin = false;
+                        }
+                        self.enabled = true;
+                        cb(true, data.role === 'admin' ? '已绑定（管理员）' : '已绑定', data.role);
+                    } else {
+                        cb(false, (data && data.message) || '绑定失败');
+                    }
+                })['catch'](function (e) {
+                    cb(false, '网络异常，请检查接口地址与网络');
+                });
+            } catch (e) {
+                cb(false, '网络异常');
+            }
+        },
+
+        /* ---------- 状态（仅供结算面板使用） ---------- */
+        status: function () {
+            if (!this.enabled) {
+                return { mode: 'local', pending: 0, error: '' };
+            }
+            return {
+                mode: 'cloud',
+                pending: this.queue.length,
+                error: this.lastError
+            };
+        },
+
+        /* ---------- 结算面板底部那一行（唯一允许出现备份信息的地方） ---------- */
+        statusHtml: function () {
+            var st = this.status();
+            if (st.mode === 'local') {
+                return '<div class="backup-line">✓ 数据已保存在本机</div>';
+            }
+            if (st.error) {
+                return '<div class="backup-line bad">⚠ ' + escapeHtml(st.error) + '</div>';
+            }
+            if (st.pending > 0) {
+                return '<div class="backup-line warn">⚠ ' + st.pending + ' 条待上传（网络恢复后自动补传）</div>';
+            }
+            return '<div class="backup-line">✓ 已备份到团队表格</div>';
+        }
+    };
+
+    /* ==================== 绑定弹窗控制 ==================== */
+    function openBind(forceAdmin) {
+        el.bindMask.style.display = '';
+        el.bindErr.textContent = '';
+        el.bindIsAdmin.checked = !!forceAdmin;
+        el.bindAdminToken.style.display = forceAdmin ? '' : 'none';
+        setTimeout(function () { el.bindToken.focus(); }, 60);
+    }
+    function closeBind() {
+        el.bindMask.style.display = 'none';
+    }
+
+    /* ==================== 初始化 ==================== */
+    function init() {
+        cacheDom();
+        Sync.init();
+        session = newSession();
+        session.deviceId = Sync.deviceId;
+        loadSessionToForm();
+        bindEvents();
+        startClock();
+        clearEntry();
+        renderAll();
+        renderHistory();
+        el.recName.focus();
+        // 已配置接口地址但还没绑定口令 → 提示绑定一次
+        if (Sync.getEndpoint() && !Sync.getToken()) {
+            setTimeout(function () { openBind(false); }, 400);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+</body>
+</html>

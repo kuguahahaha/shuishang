@@ -5,7 +5,13 @@
 
 ## 在线访问
 
-https://kuguahahaha.github.io/shuishang/
+| 页面 | 地址 | 用途 |
+|---|---|---|
+| **积分记录表** | https://kuguahahaha.github.io/shuishang/Record.html | 逐人录入 → 排名 → 筹码差额 → 导出整表截图（牌友各自录，自动汇总） |
+| 筹码结算工具 | https://kuguahahaha.github.io/shuishang/ | 单人算筹码与积分（原来的页面） |
+| 根路径 | https://kuguahahaha.github.io/ | 自动跳转到积分记录表 |
+
+> 📄 积分记录表的使用说明见 `docs/积分记录表-使用说明.md`；团队协作（飞书备份）部署见 `docs/部署指引-飞书备份.md`。
 
 ## 功能
 
