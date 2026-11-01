@@ -16,3 +16,5 @@ cloudfunctions/recordSync/test/acceptance.js
 *.env
 # 云函数源码：只在本地，手动打包 zip 上传腾讯云，不需要放仓库
 cloudfunctions/
+# 短链跳转页：里面含云函数地址+团队口令，已改用二维码直连长链接，不需要
+g/
