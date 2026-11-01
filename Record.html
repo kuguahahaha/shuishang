@@ -361,6 +361,23 @@
     button:active {
         opacity: 0.85;
     }
+    /* 标题行内的小按钮（导出 / 刷新）：不占满宽、字号小、和标题同一行 */
+    button.btn-mini {
+        flex: none;
+        width: auto;
+        padding: 5px 12px;
+        font-size: 12px;
+        line-height: 1.3;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(43, 133, 255, 0.24);
+    }
+    button.btn-mini.ghost-mini {
+        background: #ffffff;
+        color: #2b85ff;
+        border: 1px solid #bcd8f8;
+        box-shadow: none;
+        font-weight: 600;
+    }
     button.secondary {
         background: #ffffff;
         color: #2b85ff;
@@ -924,9 +941,9 @@
 
     <!-- ===================== 导出 ===================== -->
     <div class="block">
-        <div class="block-title">💾 导出 <span class="hint">生成整表图片</span></div>
-        <div class="btn-row">
-            <button id="btnPng" type="button">生成整表图片</button>
+        <div class="block-title">
+            <span>💾 导出</span>
+            <button id="btnPng" type="button" class="btn-mini">导出图片</button>
         </div>
         <!-- 复制表格文本 / JSON 导入导出：功能保留在代码里，界面暂不展示
         <div class="btn-row" style="margin-top:8px">
@@ -960,9 +977,12 @@
         </div>
     </div>
 
-    <!-- ===================== 历史场次 ===================== -->
-    <div class="block">
-        <div class="block-title">🗂 历史场次 <span class="hint" id="hisCount"></span></div>
+    <!-- ===================== 历史场次（仅管理员可见） ===================== -->
+    <div class="block" id="hisBlock" style="display:none">
+        <div class="block-title">
+            <span>🗂 历史场次 <span class="hint" id="hisCount"></span></span>
+            <button id="btnHisRefresh" type="button" class="btn-mini ghost-mini">刷新</button>
+        </div>
         <div class="history-list" id="hisList"></div>
         <div class="empty-tip" id="hisEmpty">暂无历史场次</div>
     </div>
@@ -1058,6 +1078,8 @@
         el.hisList = $('hisList');
         el.hisEmpty = $('hisEmpty');
         el.hisCount = $('hisCount');
+        el.hisBlock = $('hisBlock');
+        el.btnHisRefresh = $('btnHisRefresh');
         el.cfgEndpoint = $('cfgEndpoint');
         el.btnSaveCfg = $('btnSaveCfg');
         el.btnRebind = $('btnRebind');
@@ -1548,58 +1570,180 @@
         refreshCalc();
     }
 
-    /* ==================== 历史场次 ==================== */
-    function renderHistory() {
-        var list = loadHistory();
-        // 角色过滤：普通用户只看到自己录入的；管理员可看到全部
-        if (!Sync.isAdmin) {
-            list = list.filter(function (x) {
-                return !x.deviceId || x.deviceId === Sync.deviceId;
-            });
+    /* ==================== 历史场次 ====================
+     * ★ 牌友界面**完全隐藏**这一块（需求：牌友只录入，不翻历史）
+     * ★ 管理员可见，且能看到**所有牌友**填过的场次：
+     *   本机 localStorage 只有自己录过的那几场，必须向云端拉全量（action:list）。
+     */
+    var cloudSessions = [];      // 管理员从云端拉到的全部场次
+    var cloudLoading = false;
+    var cloudError = '';
+
+    function historyItemKey(x) {
+        return x.id || ((x.date || '') + '-' + (x.sessionName || '') + '-' + (x.table || ''));
+    }
+
+    function pullCloudSessions(cb) {
+        if (!Sync.isAdmin || !Sync.getEndpoint() || !Sync.getToken()) {
+            if (cb) { cb(false, '未配置云端'); }
+            return;
         }
+        cloudLoading = true;
+        cloudError = '';
+        renderHistory();
+        try {
+            fetch(Sync.getEndpoint(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'list',
+                    tokenHash: Sync.getToken(),
+                    adminHash: Sync.getAdminHash(),
+                    deviceId: Sync.deviceId
+                })
+            }).then(function (res) { return res.json(); })
+              .then(function (raw) {
+                  var data = parseCloudResponse(raw) || {};
+                  cloudLoading = false;
+                  if (data.ok) {
+                      cloudSessions = data.sessions || [];
+                      cloudError = '';
+                  } else {
+                      cloudError = data.message || '拉取失败';
+                  }
+                  renderHistory();
+                  if (cb) { cb(!!data.ok, data.message || ''); }
+              })['catch'](function () {
+                  cloudLoading = false;
+                  cloudError = '网络异常';
+                  renderHistory();
+                  if (cb) { cb(false, '网络异常'); }
+              });
+        } catch (e) {
+            cloudLoading = false;
+            cloudError = '网络异常';
+            renderHistory();
+            if (cb) { cb(false, '网络异常'); }
+        }
+    }
+
+    function renderHistory() {
+        var block = el.hisBlock || $('hisBlock');
+        // ★ 牌友：整块隐藏，不显示任何历史场次
+        if (!Sync.isAdmin) {
+            if (block) { block.style.display = 'none'; }
+            return;
+        }
+        if (block) { block.style.display = ''; }
+
+        var local = loadHistory();
+        var cloudIds = {};
+        var i, item;
+        for (i = 0; i < cloudSessions.length; i++) {
+            cloudIds[historyItemKey(cloudSessions[i])] = true;
+        }
+
+        // 合并：同 id 以本机为准（可能含还没推上去的最新改动）
+        var seen = {};
+        var list = [];
+        function push(src, fromLocal) {
+            var k = historyItemKey(src);
+            if (!k || seen[k]) { return; }
+            seen[k] = true;
+            list.push({ data: src, local: fromLocal, inCloud: !!cloudIds[k] });
+        }
+        for (i = 0; i < local.length; i++) { push(local[i], true); }
+        for (i = 0; i < cloudSessions.length; i++) { push(cloudSessions[i], false); }
+        // 按日期 + 场次倒序
+        list.sort(function (a, b) {
+            var ka = (a.data.date || '') + ' ' + (a.data.sessionName || '');
+            var kb = (b.data.date || '') + ' ' + (b.data.sessionName || '');
+            return kb.localeCompare(ka);
+        });
+
         el.hisList.innerHTML = '';
         el.hisEmpty.style.display = list.length ? 'none' : '';
-        el.hisCount.textContent = list.length ? ('本机已存 ' + list.length + ' 场') : '';
-        for (var i = 0; i < list.length; i++) {
-            (function (item) {
+        if (cloudLoading) {
+            el.hisCount.textContent = '正在从云端拉取…';
+        } else if (cloudError) {
+            el.hisCount.textContent = '共 ' + list.length + ' 场 · 云端' + cloudError;
+        } else {
+            el.hisCount.textContent = '共 ' + list.length + ' 场（云端 ' + cloudSessions.length + ' 场）';
+        }
+        if (el.btnHisRefresh) {
+            el.btnHisRefresh.textContent = cloudLoading ? '拉取中' : '刷新';
+        }
+
+        for (i = 0; i < list.length; i++) {
+            (function (rec) {
+                item = rec.data;
                 var div = document.createElement('div');
                 div.className = 'history-item' + (item.id === session.id ? ' cur' : '');
                 var main = document.createElement('div');
                 main.className = 'hi-main';
-                var title = (item.date || '') + ' ' + (item.sessionName || '') + ' ' + (item.table || '') + ' ' +
+                main.textContent = (item.date || '') + ' ' + (item.sessionName || '') + ' ' + (item.table || '') + ' ' +
                     (item.rows && item.rows.length ? item.rows.length + '人' : '');
-                main.textContent = title;
                 var sub = document.createElement('div');
                 sub.className = 'hi-sub';
-                var sum = 0;
-                if (item.rows) { for (var k = 0; k < item.rows.length; k++) { sum += item.rows[k].total; } }
-                sub.textContent = item.expected ? (item.expected + '人制') : '';
+                var bits = [];
+                if (item.expected) { bits.push(item.expected + '人制'); }
+                if (item.recorder) { bits.push('记录人 ' + item.recorder); }
+                bits.push(rec.inCloud ? (rec.local ? '本机·已上传' : '云端') : '本机未上传');
+                sub.textContent = bits.join(' · ');
                 var btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'row-edit';
                 btn.textContent = '载入';
-                btn.addEventListener('click', function () { loadSession(item); });
-                var btnDel = document.createElement('button');
-                btnDel.type = 'button';
-                btnDel.className = 'row-del';
-                btnDel.textContent = '✕';
-                btnDel.addEventListener('click', function () {
-                    if (!window.confirm('删除这场记录？')) { return; }
-                    var all = loadHistory().filter(function (x) { return x.id !== item.id; });
-                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(all)); } catch (e) { }
-                    renderHistory();
-                });
+                btn.addEventListener('click', function () { loadSession(rec.data, rec.local); });
                 div.appendChild(main);
                 div.appendChild(sub);
                 div.appendChild(btn);
-                div.appendChild(btnDel);
+                // 只有纯本机、且没上传过的场次才给删除按钮
+                if (rec.local && !rec.inCloud) {
+                    var btnDel = document.createElement('button');
+                    btnDel.type = 'button';
+                    btnDel.className = 'row-del';
+                    btnDel.textContent = '✕';
+                    btnDel.addEventListener('click', function () {
+                        if (!window.confirm('删除这场记录？')) { return; }
+                        var all = loadHistory().filter(function (x) { return historyItemKey(x) !== historyItemKey(item); });
+                        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(all)); } catch (e) { }
+                        renderHistory();
+                    });
+                    div.appendChild(btnDel);
+                }
                 el.hisList.appendChild(div);
             })(list[i]);
         }
     }
 
-    function loadSession(item) {
+    /* 牌友界面没有历史场次 → 刷新后自动接回「正在进行的那一场」
+     * 判据：有数据 + 场次与当前时刻自动匹配的一致 + 3 小时内更新过。
+     * 目的：避免误刷新后重录，产生与云端重复的两份记录。
+     */
+    function restoreOngoingSession() {
+        var nowLabel = guessSession(new Date());
+        var list = loadHistory();
+        var best = null;
+        var bestTime = 0;
+        for (var i = 0; i < list.length; i++) {
+            var it = list[i];
+            if (!it || !it.rows || !it.rows.length) { continue; }
+            if ((it.sessionName || '') !== nowLabel) { continue; }
+            var t = Date.parse(it.updatedAt || '');
+            if (!t || (Date.now() - t) > 3 * 3600 * 1000) { continue; }
+            if (t > bestTime) { bestTime = t; best = it; }
+        }
+        return best ? JSON.parse(JSON.stringify(best)) : null;
+    }
+
+    function loadSession(item, isLocal) {
         session = JSON.parse(JSON.stringify(item));
+        if (item.deviceId) { session.deviceId = item.deviceId; }
+        // 云端场次的行可能没有 id（老数据）→ 补一个稳定 id，避免改名/删除时错乱
+        for (var i = 0; i < session.rows.length; i++) {
+            if (!session.rows[i].id) { session.rows[i].id = 'R' + i + '_' + Math.random().toString(36).slice(2, 8); }
+        }
         editingIndex = -1;
         loadSessionToForm();
         renderAll();
@@ -1972,6 +2116,12 @@
         el.btnNext.addEventListener('click', doNext);
         el.btnFinish.addEventListener('click', doFinish);
         el.btnPng.addEventListener('click', exportPng);
+        if (el.btnHisRefresh) {
+            el.btnHisRefresh.addEventListener('click', function () {
+                if (cloudLoading) { return; }
+                pullCloudSessions();
+            });
+        }
         if (el.btnCopy) { el.btnCopy.addEventListener('click', copyText); }
         if (el.btnJson) { el.btnJson.addEventListener('click', exportJson); }
 
@@ -2608,6 +2758,9 @@
                             self.isAdmin = false;
                         }
                         self.enabled = true;
+                        // 角色确认后刷新历史场次（管理员才显示，且需要拉云端全量）
+                        renderHistory();
+                        if (self.isAdmin) { pullCloudSessions(); }
                         cb(true, data.role === 'admin' ? '已绑定（管理员）' : '已绑定', data.role);
                     } else {
                         cb(false, (data && data.message) || '绑定失败');
@@ -2745,8 +2898,13 @@
      *   清掉会导致每次都被当成新设备 → 飞书设备表被灌垃圾行。
      */
     var KEEP_LOCAL_KEYS = ['wc_sync_device_id'];
+    /* ★ 一次性标记键：不能以 wc_ 开头，否则会被自己删掉
+     *   之前是「每次打开都清空」，会导致：① 本机历史场次永远留不下
+     *   ② 未推送的待同步队列被清空 → 录入的数据丢失、云端也看不到 */
+    var PURGE_FLAG = 'sx_purge_v2_done';
     function purgeLocalCache() {
         try {
+            if (localStorage.getItem(PURGE_FLAG) === '1') { return 0; }
             var keys = [];
             for (var i = 0; i < localStorage.length; i++) {
                 var k = localStorage.key(i);
@@ -2759,6 +2917,7 @@
             for (var j = 0; j < keys.length; j++) {
                 localStorage.removeItem(keys[j]);
             }
+            localStorage.setItem(PURGE_FLAG, '1');
             return keys.length;
         } catch (e) {
             return 0;
@@ -2801,6 +2960,9 @@
                     Sync.lsSet(CFG.adminKey, '');
                 }
                 renderSettle();
+                // ★ 管理员：显示历史场次并向云端拉取「所有牌友填过的场次」
+                renderHistory();
+                if (Sync.isAdmin) { pullCloudSessions(); }
             });
         }
         session = newSession();
@@ -2809,6 +2971,10 @@
         if (el.fSession && !session.sessionName) {
             session.sessionName = guessSession(new Date());
         }
+        // ★ 自动接回「正在进行的那一场」：牌友界面已没有历史场次入口，
+        //   刷新后必须能接着录，否则重录会造成云端重复行。
+        var ongoing = restoreOngoingSession();
+        if (ongoing) { session = ongoing; }
         // 桌号不填默认值（留空让用户自己填）
         loadSessionToForm();
         bindEvents();
