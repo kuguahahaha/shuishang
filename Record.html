@@ -410,11 +410,21 @@
         text-align: center;
         font-variant-numeric: tabular-nums;
     }
+    /* 昵称列：固定宽度 + 居中
+     *  之前昵称列自动撑开剩余空间且左对齐 → 昵称文字离「本场积分」列很远。
+     *  改为固定 92px 且居中，昵称与积分紧挨着。 */
     .rec-table td.name {
-        text-align: left;
-        padding-left: 8px;
+        text-align: center;
+        padding-left: 3px;
+        padding-right: 3px;
         font-weight: 600;
         word-break: break-all;
+        width: 104px;
+        max-width: 104px;
+    }
+    .rec-table th.name-h {
+        width: 104px;
+        max-width: 104px;
     }
     .rec-table tr:last-child td { border-bottom: none; }
     .rec-table tr.total td {
@@ -868,7 +878,7 @@
             </div>
             <div class="calc-item">
                 <span class="k">需支付</span>
-                <span class="v money" id="calcPay">¥0</span>
+                <span class="v" id="calcPay">0</span>
             </div>
         </div>
         <div class="btn-row">
@@ -894,7 +904,7 @@
             <thead>
                 <tr>
                     <th style="width:34px">序号</th>
-                    <th>玩家昵称</th>
+                    <th class="name-h">玩家昵称</th>
                     <th style="width:52px">本场积分</th>
                     <th style="width:66px">总码量</th>
                     <th style="width:52px">需支付</th>
@@ -919,10 +929,9 @@
 
     <!-- ===================== 导出 ===================== -->
     <div class="block">
-        <div class="block-title">💾 导出 <span class="hint">CSV / 整表截图</span></div>
+        <div class="block-title">💾 导出 <span class="hint">生成整表图片</span></div>
         <div class="btn-row">
-            <button id="btnCsv" type="button" class="ghost">导出 CSV</button>
-            <button id="btnPng" type="button" class="ghost">导出整表截图</button>
+            <button id="btnPng" type="button">生成整表图片</button>
         </div>
         <!-- 复制表格文本 / JSON 导入导出：功能保留在代码里，界面暂不展示
         <div class="btn-row" style="margin-top:8px">
@@ -997,7 +1006,7 @@
     var DIFF_LIMIT = 30000;            // 筹码差额上限 3 万
     var BASE_CHIPS = 160000;           // 每人初始码 16 万
     var MAX_HISTORY = 50;              // 本机最多保存 50 场
-    var STORAGE_KEY = 'wc_record_sessions_v1';
+    var STORAGE_KEY = 'wc_record_sessions_v2';
 
     var FACES = [
         { id: 'c500', label: '500', value: 500 },
@@ -1045,7 +1054,6 @@
         el.recEmpty = $('recEmpty');
         el.recCount = $('recCount');
         el.settleBox = $('settleBox');
-        el.btnCsv = $('btnCsv');
         el.btnPng = $('btnPng');
         el.btnCopy = $('btnCopy');
         el.btnJson = $('btnJson');
@@ -1285,9 +1293,9 @@
         var r = calcRow(chips, cards);
         el.calcChips.textContent = money(r.chips);
         el.calcTotal.textContent = money(r.total);
-        el.calcPoints.textContent = (r.points > 0 ? '+' : '') + r.points;
+        el.calcPoints.textContent = String(r.points);
         el.calcPoints.className = 'v' + (r.points < 0 ? ' warn' : '');
-        el.calcPay.textContent = '¥' + r.pay;
+        el.calcPay.textContent = String(r.pay);
         if (el.tipCards) { el.tipCards.textContent = r.cardGap; }
         el.recStep.textContent = (editingIndex >= 0 ? '编辑第 ' + (editingIndex + 1) + ' 位' : '第 ' + (session.rows.length + 1) + ' 位');
         el.btnNext.textContent = (editingIndex >= 0 ? '更新本条' : '录入下一位');
@@ -1338,9 +1346,9 @@
                 badge.textContent = (medal === 1 ? '🥇①' : (medal === 2 ? '🥈②' : '🥉③'));
                 nameCell.appendChild(badge);
             }
-            mk((r.points > 0 ? '+' : '') + r.points);
+            mk(String(r.points));
             mk(money(r.total));
-            mk('¥' + r.pay);
+            mk(String(r.pay));
 
             // 操作列：改 / 删 两个图标左右并排
             var op = document.createElement('td');
@@ -1455,12 +1463,13 @@
 
         var html = '';
         html += '<div class="rank-row">';
-        for (var t = 0; t < top.length; t++) {
-            var badge = top[t].rank === 1 ? '🥇 第一名' : (top[t].rank === 2 ? '🥈 第二名' : '🥉 第三名');
-            html += '<div class="rank-card"><span class="rk">' + badge + '</span>' +
+        // ★ 只显示前三张卡片（并列时可能多于 3 人），名次按卡片位置取，不按 rank
+        var slotNames = ['🥇 第一名', '🥈 第二名', '🥉 第三名'];
+        for (var t = 0; t < top.length && t < 3; t++) {
+            html += '<div class="rank-card"><span class="rk">' + slotNames[t] + '</span>' +
                 '<span class="rv">' + escapeHtml(top[t].row.name) + '</span>' +
                 '<span class="rp">' + money(top[t].row.total) + ' · ' +
-                (top[t].row.points > 0 ? '+' : '') + top[t].row.points + ' 分</span></div>';
+                top[t].row.points + ' 分</span></div>';
         }
         html += '</div>';
 
@@ -1470,7 +1479,7 @@
             '筹码差额：Σ总码量 <b>' + money(s.sumTotal) + '</b> − 16万×' + s.expected + ' = <b>' +
             (s.diff > 0 ? '+' : '') + money(s.diff) + '</b>（上限 3 万）' + diffTxt +
             '</div>';
-        html += '<div class="check-line">需支付合计：<b>¥' + money(s.sumPay) + '</b>　|　已录 <b>' +
+        html += '<div class="check-line">需支付合计：<b>' + money(s.sumPay) + '</b>　|　已录 <b>' +
             s.count + '</b> / 共 ' + s.expected + ' 人' +
             (s.count < s.expected ? '（还差 ' + (s.expected - s.count) + ' 人）' : '') +
             '</div>';
@@ -1565,9 +1574,9 @@
             var medal = medals[i] && medals[i] <= 3
                 ? ['🥇①', '🥈②', '🥉③'][medals[i] - 1] + ' '
                 : '';
-            lines.push([String(i + 1), medal + r.name, String(r.points), String(r.total), '¥' + r.pay]);
+            lines.push([String(i + 1), medal + r.name, String(r.points), String(r.total), String(r.pay)]);
         }
-        lines.push(['', '合计', '', String(s.sumTotal), '¥' + s.sumPay]);
+        lines.push(['', '合计', '', String(s.sumTotal), String(s.sumPay)]);
         lines.push(['', '筹码差额（Σ总码量 − 16万×' + s.expected + '）', '', String(s.diff), s.diff > DIFF_LIMIT ? '超3万需复核' : '合格']);
         return lines;
     }
@@ -1637,36 +1646,6 @@
     function download(filename, content, mime) {
         var blob = new Blob([content], { type: mime });
         saveFileToDevice(filename, blob, mime);
-    }
-
-    function exportCsv() {
-        if (!session.rows.length) { alert('还没有录入任何玩家'); return; }
-        readFormToSession();
-        var lines = buildTableRows();
-        var meta = [
-            ['水上俱乐部 · 活动签到与积分记录表'],
-            ['日期', session.date, '场次', session.sessionName, '桌号', session.table],
-            ['人数', String(session.expected), '记录人', session.recorder]
-        ];
-        var out = [];
-        for (var i = 0; i < meta.length; i++) {
-            out.push(meta[i].map(csvCell).join(','));
-        }
-        out.push('');
-        for (var j = 0; j < lines.length; j++) {
-            out.push(lines[j].map(csvCell).join(','));
-        }
-        // UTF-8 BOM，保证 Excel 打开中文不乱码
-        var csv = '﻿' + out.join('\r\n');
-        download(fileBase(session) + '.csv', csv, 'text/csv;charset=utf-8');
-    }
-
-    function csvCell(v) {
-        var s = String(v === undefined || v === null ? '' : v);
-        if (/[",\n]/.test(s)) {
-            return '"' + s.replace(/"/g, '""') + '"';
-        }
-        return s;
     }
 
     function exportJson() {
@@ -1803,9 +1782,9 @@
             var vals = [
                 String(r + 1),
                 nameTxt,
-                (row.points > 0 ? '+' : '') + row.points,
+                String(row.points),
                 money(row.total),
-                '¥' + row.pay
+                String(row.pay)
             ];
             for (var v = 0; v < cols.length; v++) {
                 var cw2 = cols[v].w * scaleX;
@@ -1825,17 +1804,20 @@
         var medalCardBg = ['#fff6dc', '#eef2f8', '#fbeee4'];
         var medalCardBd = ['#e8b64c', '#9fb0c6', '#c99263'];
         var medalCardTx = ['#8a6410', '#5c6c80', '#8a5a30'];
-        for (var m = 0; m < top.length; m++) {
+        // ★ 按「卡片位置」取名次与配色（1/2/3），不用 rank：
+        //   并列时 rank 会重复（如两人都 rank=2），会导致出现两张「第二名」卡片。
+        for (var m = 0; m < top.length && m < 3; m++) {
+            var slot = m;   // 0/1/2 → 第一/二/三名
             var bx = 24 + m * ((W - 48) / 3);
             var bw = (W - 48) / 3 - 10;
-            ctx.fillStyle = medalCardBg[top[m].rank - 1] || '#fffdf5';
+            ctx.fillStyle = medalCardBg[slot];
             ctx.fillRect(bx, my, bw, medalH - 12);
-            ctx.strokeStyle = medalCardBd[top[m].rank - 1] || '#ffd9a6';
+            ctx.strokeStyle = medalCardBd[slot];
             ctx.strokeRect(bx, my, bw, medalH - 12);
-            text(medalNames[top[m].rank - 1], bx + bw / 2, my + 18, 13, medalCardTx[top[m].rank - 1] || '#8a9bb3', false, 'center');
-            text(top[m].row.name, bx + bw / 2, my + 40, 17, medalCardTx[top[m].rank - 1] || '#1f6fd0', true, 'center');
-            text(money(top[m].row.total) + ' · ' + (top[m].row.points > 0 ? '+' : '') + top[m].row.points + ' 分',
-                bx + bw / 2, my + 60, 12, '#b0261e', false, 'center');
+            text(medalNames[slot], bx + bw / 2, my + 18, 13, medalCardTx[slot], false, 'center');
+            text(top[m].row.name, bx + bw / 2, my + 40, 17, medalCardTx[slot], true, 'center');
+            text(money(top[m].row.total) + ' · ' + top[m].row.points + ' 分',
+                bx + bw / 2, my + 60, 12, top[m].row.points < 0 ? '#b0261e' : '#455a75', false, 'center');
         }
 
         // 差额与合计
@@ -1848,7 +1830,7 @@
         text('筹码差额：Σ总码量 ' + money(s.sumTotal) + ' − 16万×' + s.expected + ' = ' +
             (s.diff > 0 ? '+' : '') + money(s.diff) + '（上限 3 万）' + (diffBad ? '　超了，需复核！' : '　合格'),
             34, cy + 22, 14, diffBad ? '#c62828' : '#2e7d32', true);
-        text('需支付合计：¥' + money(s.sumPay) + '　|　已录 ' + s.count + ' / 共 ' + s.expected + ' 人' +
+        text('需支付合计：' + money(s.sumPay) + '　|　已录 ' + s.count + ' / 共 ' + s.expected + ' 人' +
             (s.count < s.expected ? '（还差 ' + (s.expected - s.count) + ' 人）' : ''),
             34, cy + 50, 14, '#455a75', false);
 
@@ -1860,62 +1842,53 @@
         showPngPreview(canvas, filename);
     }
 
-    // 截图预览层：手机上可「保存到相册」或长按图片
+    // 截图预览层：手机上长按图片即可保存到相册
+    /*  ★ 为什么用 <img> 而不是直接显示 <canvas>：
+     *    微信 / QQ 内置浏览器只支持对 **<img>** 元素长按保存图片，
+     *    canvas 元素长按无反应；而 <a download> 在微信里会被拦成
+     *    「可在浏览器打开此网页来下载文件」。所以：
+     *      1) canvas → dataURL → 塞进 <img>（保留长按保存）
+     *      2) 桌面浏览器额外提供「下载 PNG」
+     */
     function showPngPreview(canvas, filename) {
         var mask = document.createElement('div');
         mask.className = 'png-mask';
         var wrap = document.createElement('div');
         wrap.className = 'png-wrap';
-        canvas.className = 'png-canvas';
+
+        // 用 <img> 承载，微信才能长按保存
+        var img = document.createElement('img');
+        img.className = 'png-canvas';
+        img.alt = '积分记录表';
+        var dataUrl = canvas.toDataURL('image/png');
+        img.src = dataUrl;
+
         var tip = document.createElement('div');
         tip.className = 'png-tip';
-        var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        var isMobile = /Android|iPhone|iPad|iPod|Mobile|WeChat|MicroMessenger/i.test(navigator.userAgent);
         tip.textContent = isMobile
-            ? '图片已铺满屏幕，可直接截图；点「保存到手机」选「存储到照片 / 存储到文件」'
-            : '点「保存到手机」直接下载；点图片可放大看细节';
-
-        // ---------- 放大 / 还原 ----------
-        var zoomed = false;
-        var baseWidth = canvas.getBoundingClientRect().width || 900;
-        var zoomBtn = document.createElement('button');
-        zoomBtn.type = 'button';
-        zoomBtn.className = 'secondary';
-        zoomBtn.textContent = '放大';
-        function applyZoom() {
-            if (zoomed) {
-                canvas.style.width = '';
-                canvas.style.maxWidth = '';
-                wrap.style.width = '';
-                zoomBtn.textContent = '放大';
-            } else {
-                canvas.style.width = (baseWidth * 2) + 'px';
-                canvas.style.maxWidth = 'none';
-                wrap.style.width = (baseWidth * 2 + 18) + 'px';
-                zoomBtn.textContent = '还原';
-            }
-            zoomed = !zoomed;
-        }
-        canvas.addEventListener('click', function () { applyZoom(); });
+            ? '长按上面的图片 → 选「保存到相册」，即可存到手机'
+            : '右键图片可另存为；或点下方「下载 PNG」';
 
         var btns = document.createElement('div');
         btns.className = 'png-btns';
-        var dl = document.createElement('button');
-        dl.type = 'button';
-        dl.textContent = '保存到手机';
-        dl.addEventListener('click', function () {
-            // canvas → blob → 走统一保存流程（手机弹出系统分享面板）
-            if (canvas.toBlob) {
-                canvas.toBlob(function (blob) {
-                    if (blob) {
-                        saveFileToDevice(filename, blob, 'image/png');
-                    } else {
-                        fallbackSave(filename, new Blob([canvas.toDataURL('image/png')], { type: 'image/png' }));
-                    }
-                }, 'image/png');
-            } else {
-                fallbackSave(filename, new Blob([canvas.toDataURL('image/png')], { type: 'image/png' }));
-            }
-        });
+
+        // 桌面端才显示下载按钮（手机上 download 无效，反而让人困惑）
+        if (!isMobile) {
+            var dl = document.createElement('button');
+            dl.type = 'button';
+            dl.textContent = '下载 PNG';
+            dl.addEventListener('click', function () {
+                var a = document.createElement('a');
+                a.href = dataUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+            btns.appendChild(dl);
+        }
+
         var cls = document.createElement('button');
         cls.type = 'button';
         cls.className = 'secondary';
@@ -1923,10 +1896,8 @@
         cls.addEventListener('click', function () {
             if (mask.parentNode) { mask.parentNode.removeChild(mask); }
         });
-        btns.appendChild(dl);
-        btns.appendChild(zoomBtn);
         btns.appendChild(cls);
-        wrap.appendChild(canvas);
+        wrap.appendChild(img);
         wrap.appendChild(tip);
         wrap.appendChild(btns);
         mask.appendChild(wrap);
@@ -1958,7 +1929,6 @@
 
         el.btnNext.addEventListener('click', doNext);
         el.btnFinish.addEventListener('click', doFinish);
-        el.btnCsv.addEventListener('click', exportCsv);
         el.btnPng.addEventListener('click', exportPng);
         if (el.btnCopy) { el.btnCopy.addEventListener('click', copyText); }
         if (el.btnJson) { el.btnJson.addEventListener('click', exportJson); }
@@ -2367,7 +2337,7 @@
             var self = this;
             var list;
             try {
-                list = JSON.parse(localStorage.getItem('wc_record_sessions_v1') || '[]');
+                list = JSON.parse(localStorage.getItem('wc_record_sessions_v2') || '[]');
             } catch (e) { list = []; }
             if (!Array.isArray(list) || !list.length) { cb(0, 0); return; }
             var items = [];
@@ -2695,7 +2665,38 @@
     }
 
     /* ==================== 初始化 ==================== */
+    /* ==================== 清除旧版本本地缓存 ====================
+     * 需求：清空所有用户手机上的本地缓存。
+     * 做法：页面启动时删掉所有 wc_* 开头的键（历史场次、队列、绑定信息）。
+     * ★ 绑定信息也一起清 → 牌友下次打开需要重新走一次链接参数自动配置
+     *   （带参链接会自动重填，用户无感）。
+     * ★ 设备号（wc_sync_device_id）保留：它是设备的稳定标识，
+     *   清掉会导致每次都被当成新设备 → 飞书设备表被灌垃圾行。
+     */
+    var KEEP_LOCAL_KEYS = ['wc_sync_device_id'];
+    function purgeLocalCache() {
+        try {
+            var keys = [];
+            for (var i = 0; i < localStorage.length; i++) {
+                var k = localStorage.key(i);
+                if (!k) { continue; }
+                if (KEEP_LOCAL_KEYS.indexOf(k) >= 0) { continue; }
+                if (k.indexOf('wc_') === 0 || k.indexOf('wc_record') === 0) {
+                    keys.push(k);
+                }
+            }
+            for (var j = 0; j < keys.length; j++) {
+                localStorage.removeItem(keys[j]);
+            }
+            return keys.length;
+        } catch (e) {
+            return 0;
+        }
+    }
+
     function init() {
+        // ★ 先清空本机缓存（必须在 cacheDom / Sync.init 之前）
+        try { purgeLocalCache(); } catch (e) { }
         cacheDom();
         Sync.init();
         // 链接参数预配置（管理员分享链接给牌友）
