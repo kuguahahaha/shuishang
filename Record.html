@@ -2730,6 +2730,7 @@
                 deviceId: this.deviceId,
                 tokenHash: this.getToken(),
                 adminHash: this.getAdminHash(),
+                wipeAck: this.ls('wc_wipe_ack') || '',
                 items: batch
             });
 
@@ -2746,6 +2747,19 @@
                 self.inflight = false;
                 self.lastError = msg || '';
                 self.retry++;
+                // ★ 管理员在云端点了「清空数据」：本机缓存与队列一起清掉，然后重载页面
+                if (code === 'WIPE_REQUIRED') {
+                    var sig = msg || 'wipe';
+                    if (self.ls('wc_wipe_ack') !== sig) {
+                        wipeLocalData();
+                        self.lsSet('wc_wipe_ack', sig);   // 回执要在清理之后写，否则会被一起删掉
+                        self.queue = [];
+                        self.saveQueue();
+                        showToast('管理员已清空数据，本机缓存已重置', 4200);
+                        setTimeout(function () { location.reload(); }, 1600);
+                    }
+                    return;
+                }
                 // 口令错误属于不可重试的异常：停下并保留队列，等待用户处理
                 if (code === 'TOKEN_INVALID') {
                     // ★ 口令换过之后，还拿着旧二维码的牌友会一直静默失败（数据只留在本机）。
@@ -3014,6 +3028,24 @@
      *   清掉会导致每次都被当成新设备 → 飞书设备表被灌垃圾行。
      */
     var KEEP_LOCAL_KEYS = ['wc_sync_device_id'];
+
+    /** 彻底清掉本机的业务缓存（历史场次 / 队列 / 绑定信息 / 清理标记），只保留设备号。
+     *  用于「管理员云端清空数据」时把各设备一起重置 —— 否则手机上的旧队列会一直往云端补传。
+     */
+    function wipeLocalData() {
+        try {
+            var keepDevice = '';
+            try { keepDevice = localStorage.getItem('wc_sync_device_id') || ''; } catch (e) { }
+            var keys = [];
+            for (var i = 0; i < localStorage.length; i++) {
+                var k = localStorage.key(i);
+                if (k && k.indexOf('wc_') === 0) { keys.push(k); }
+            }
+            for (var j = 0; j < keys.length; j++) { localStorage.removeItem(keys[j]); }
+            if (keepDevice) { localStorage.setItem('wc_sync_device_id', keepDevice); }
+            return keys.length;
+        } catch (e) { return 0; }
+    }
     /* ★ 一次性标记键：不能以 wc_ 开头，否则会被自己删掉
      *   之前是「每次打开都清空」，会导致：① 本机历史场次永远留不下
      *   ② 未推送的待同步队列被清空 → 录入的数据丢失、云端也看不到 */
