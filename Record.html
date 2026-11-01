@@ -2419,8 +2419,10 @@
             changed = true;
         }
         if (q.at) {
+            // ★ 只存哈希并标记「待校验」，不直接置 isAdmin
+            //   真正的管理员身份必须由云端 verifyRole 确认，否则错误口令也能看到状态行
             Sync.lsSet(CFG.adminKey, Sha256.hash(q.at));
-            Sync.isAdmin = true;
+            Sync.pendingAdmin = true;
             changed = true;
         } else if (q.tk) {
             // ★ 普通链接（只有团队口令）→ 清除可能残留的管理员身份
@@ -2466,16 +2468,17 @@
         var fromLink = applyUrlParams();
         if (fromLink) {
             Sync.enabled = !!(Sync.getEndpoint() && Sync.getToken());
-            Sync.isAdmin = !!Sync.getAdminHash();
+            // 管理员身份一律先置 false，等云端校验通过再置 true
+            Sync.isAdmin = false;
         }
         // ★ 管理员身份需要向云端校验（本地标记不可信）
         //   校验通过才显示结算面板底部那行状态；失败则静默降级为普通用户
-        if (Sync.isAdmin && Sync.getEndpoint() && Sync.getToken()) {
+        if (Sync.getAdminHash() && Sync.getEndpoint() && Sync.getToken()) {
             Sync.verifyRole(function (ok, msg, role) {
                 if (ok && role === 'admin') {
                     Sync.isAdmin = true;
                 } else {
-                    // 管理员口令不对 → 静默降级为普通用户
+                    // 管理员口令不对 → 静默降级为普通用户（不暴露管理员账号存在）
                     Sync.isAdmin = false;
                     Sync.lsSet(CFG.adminKey, '');
                 }

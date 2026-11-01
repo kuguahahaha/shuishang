@@ -7,42 +7,44 @@ function chk(n,ok,x){LOG.push((ok?'[OK] ':'[ERR] ')+n+(x?' — '+x:''));}
 function dump(){var d=document.getElementById('e2eout'); if(!d){d=document.createElement('pre');d.id='e2eout';document.body.appendChild(d);} d.textContent='E2ERESULT::'+LOG.join(' ## ');}
 window.addEventListener('load', function(){
   var D=window.__recordDebug;
-  try{
-    function setv(id,v){var e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input'));}
-    setv('fRecorder','E2E牌友'); document.getElementById('fRecorder').dispatchEvent(new Event('change'));
-    var people=[['E2E甲',10000,7,5,0],['E2E乙',118000,7,59,0]];
-    people.forEach(function(c){
-      setv('recName',c[0]);
-      setv('c10w',''); setv('c5w',''); setv('c5000','');
-      setv('c1w',Math.floor(c[1]/10000)||''); var rem=c[1]%10000;
-      setv('c1000',Math.floor(rem/1000)||''); rem%=1000;
-      setv('c500',Math.floor(rem/500)||''); rem%=500;
-      setv('c100',rem||'');
-      setv('recCards',c[2]);
-      document.getElementById('btnNext').click();
-    });
-    var oc=window.confirm; window.confirm=function(){return true;};
-    document.getElementById('btnFinish').click();
-    window.confirm=oc;
-    var bl=document.querySelector('#settleBox .backup-line');
-    var isAdmin=D.syncIsAdmin();
-    LOG.push('[INFO] isAdmin='+isAdmin);
-    LOG.push('[INFO] 状态行='+(bl?bl.textContent:'(无这一行)'));
-    chk('普通牌友：结算面板没有状态行', !bl, bl?('出现了: '+bl.textContent):'无 ✓');
-    // 全页敏感词
-    var WORDS=['同步','上传','云端','备份','飞书','服务器','团队表格','已记录到'];
-    var bad=[]; var vis=document.body.innerText;
-    WORDS.forEach(function(w){ if(vis.indexOf(w)>=0) bad.push(w); });
-    chk('整页零敏感词', bad.length===0, bad.length?bad.join(','):'无');
-  }catch(e){ LOG.push('[FATAL] '+e.message); }
-  dump();
+  function setv(id,v){var e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input'));}
+  // 等 6 秒，让 verifyRole 的云端校验完成
   setTimeout(function(){
-    var st=D.syncStatus();
-    LOG.push('[INFO] 同步状态='+JSON.stringify(st));
-    chk('数据已写入（队列清空）', st.pending===0, 'pending='+st.pending);
-    LOG.push('[INFO] JS错误: '+(ERR.length?ERR.join(';'):'无'));
+    try{
+      var isAdmin=D.syncIsAdmin();
+      LOG.push('[INFO] 最终 isAdmin='+isAdmin);
+      LOG.push('[INFO] localStorage adminHash='+(localStorage.getItem('wc_sync_admin_hash')?'有':'无'));
+      setv('fRecorder','E2E'); document.getElementById('fRecorder').dispatchEvent(new Event('change'));
+      var people=[['E2E甲',10000,7,5,0],['E2E乙',118000,7,59,0]];
+      people.forEach(function(c){
+        setv('recName',c[0]);
+        setv('c10w',''); setv('c5w',''); setv('c5000','');
+        setv('c1w',Math.floor(c[1]/10000)||''); var rem=c[1]%10000;
+        setv('c1000',Math.floor(rem/1000)||''); rem%=1000;
+        setv('c500',Math.floor(rem/500)||''); rem%=500;
+        setv('c100',rem||'');
+        setv('recCards',c[2]);
+        document.getElementById('btnNext').click();
+      });
+      var oc=window.confirm; window.confirm=function(){return true;};
+      document.getElementById('btnFinish').click();
+      window.confirm=oc;
+      var bl=document.querySelector('#settleBox .backup-line');
+      LOG.push('[INFO] 状态行='+(bl?bl.textContent:'(无这一行)'));
+      var WORDS=['同步','上传','云端','备份','飞书','服务器','团队表格','已记录到'];
+      var bad=[]; var vis=document.body.innerText;
+      WORDS.forEach(function(w){ if(vis.indexOf(w)>=0) bad.push(w); });
+      chk('整页零敏感词', bad.length===0, bad.length?bad.join(','):'无');
+      LOG.push('[INFO] 可见状态行数='+(document.querySelectorAll('#settleBox .backup-line').length));
+    }catch(e){ LOG.push('[FATAL] '+e.message); }
     dump();
-  }, 9000);
+    setTimeout(function(){
+      var st=D.syncStatus();
+      chk('数据已写入', st.pending===0, 'pending='+st.pending);
+      LOG.push('[INFO] JS错误: '+(ERR.length?ERR.join(';'):'无'));
+      dump();
+    }, 7000);
+  }, 6000);
 });
 </script>
 <meta charset="UTF-8">
@@ -2463,8 +2465,10 @@ window.addEventListener('load', function(){
             changed = true;
         }
         if (q.at) {
+            // ★ 只存哈希并标记「待校验」，不直接置 isAdmin
+            //   真正的管理员身份必须由云端 verifyRole 确认，否则错误口令也能看到状态行
             Sync.lsSet(CFG.adminKey, Sha256.hash(q.at));
-            Sync.isAdmin = true;
+            Sync.pendingAdmin = true;
             changed = true;
         } else if (q.tk) {
             // ★ 普通链接（只有团队口令）→ 清除可能残留的管理员身份
@@ -2510,16 +2514,17 @@ window.addEventListener('load', function(){
         var fromLink = applyUrlParams();
         if (fromLink) {
             Sync.enabled = !!(Sync.getEndpoint() && Sync.getToken());
-            Sync.isAdmin = !!Sync.getAdminHash();
+            // 管理员身份一律先置 false，等云端校验通过再置 true
+            Sync.isAdmin = false;
         }
         // ★ 管理员身份需要向云端校验（本地标记不可信）
         //   校验通过才显示结算面板底部那行状态；失败则静默降级为普通用户
-        if (Sync.isAdmin && Sync.getEndpoint() && Sync.getToken()) {
+        if (Sync.getAdminHash() && Sync.getEndpoint() && Sync.getToken()) {
             Sync.verifyRole(function (ok, msg, role) {
                 if (ok && role === 'admin') {
                     Sync.isAdmin = true;
                 } else {
-                    // 管理员口令不对 → 静默降级为普通用户
+                    // 管理员口令不对 → 静默降级为普通用户（不暴露管理员账号存在）
                     Sync.isAdmin = false;
                     Sync.lsSet(CFG.adminKey, '');
                 }
