@@ -966,7 +966,7 @@
         </table>
         <div class="empty-tip" id="recEmpty">还没有录入任何玩家，先在上面录入第一位</div>
         <div class="btn-row" style="margin-top:8px">
-            <button id="btnClear" type="button" class="ghost">清空当前场次</button>
+            <button id="btnClear" type="button" class="ghost">录入下一场</button>
         </div>
     </div>
 
@@ -1796,6 +1796,8 @@
         for (var i = 0; i < list.length; i++) {
             var it = list[i];
             if (!it || !it.rows || !it.rows.length) { continue; }
+            // 已「录入下一场」结束掉的场次不再自动接回
+            if (it.closed) { continue; }
             if ((it.sessionName || '') !== nowLabel) { continue; }
             var t = Date.parse(it.updatedAt || '');
             if (!t || (Date.now() - t) > 3 * 3600 * 1000) { continue; }
@@ -2286,14 +2288,44 @@
             });
         }
 
+        /* 「录入下一场」：只在本机开新的一场，**完全不动云端数据**
+         * ★ 原来是「清空当前场次」——一点就把本场已录数据抹掉、且和云端不一致，太危险。
+         *   现在改成：把当前场次标记为已结束（closed），再新建一场空白场次。
+         *   已录的数据仍留在历史/云端，不会丢。
+         */
         el.btnClear.addEventListener('click', function () {
-            if (!session.rows.length) { alert('当前场次没有数据'); return; }
-            if (!window.confirm('清空当前场次的所有录入记录？此操作不可撤销。')) { return; }
-            session.rows = [];
+            if (session.rows.length) {
+                if (!window.confirm('开始录入下一场？\n当前这 ' + session.rows.length + ' 条记录会保留（云端不动），只是界面切到新的一场。')) { return; }
+            }
+            // ① 当前场次标记 closed → 刷新页面时不会被「自动接回进行中场次」捡回来
+            try {
+                var all = loadHistory();
+                var changed = false;
+                for (var i = 0; i < all.length; i++) {
+                    if (all[i].id === session.id) { all[i].closed = true; changed = true; }
+                }
+                if (changed) { localStorage.setItem(STORAGE_KEY, JSON.stringify(all)); }
+            } catch (e) { }
+
+            // ② 新建一场：保留日期与记录人（通常还是同一人记），场次按当前时间重算，桌号/人数清空
+            var keepRecorder = session.recorder || '';
+            var keepReviewer = session.reviewer || '';
+            var keepRating = session.rating || '';
+            session = newSession();
+            session.deviceId = Sync.deviceId;
+            session.recorder = keepRecorder;
+            session.reviewer = keepReviewer;
+            session.rating = keepRating;
+            session.sessionName = guessSession(new Date());
+
             editingIndex = -1;
+            loadSessionToForm();
             clearEntry();
             renderAll();
-            saveHistory();
+            refreshEntryState();
+            // ③ 不调用 saveHistory：新场次还没有数据，不往历史列表里塞空记录
+            showToast('已切到新的一场，本机界面已清空（云端记录不受影响）');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
         // 场次信息变化即保存
