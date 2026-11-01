@@ -422,9 +422,34 @@
         font-weight: bold;
         color: #1f6fd0;
     }
-    .rec-table tr.medal-1 td { background: #fff8e1; }
-    .rec-table tr.medal-2 td { background: #f7f9fc; }
-    .rec-table tr.medal-3 td { background: #fdf6ef; }
+    /* ---------- 前三名奖牌底色（金 / 银 / 铜） ----------
+     * 色调偏柔和，避免在整页蓝色基调里显得刺眼；
+     * 同时左侧加一条同色竖条，加强"这一行是前三名"的识别。 */
+    .rec-table tr.medal-1 td { background: #fff6dc; }
+    .rec-table tr.medal-2 td { background: #eef2f8; }
+    .rec-table tr.medal-3 td { background: #fbeee4; }
+    .rec-table tr.medal-1 td:first-child { box-shadow: inset 3px 0 0 #e8b64c; }
+    .rec-table tr.medal-2 td:first-child { box-shadow: inset 3px 0 0 #9fb0c6; }
+    .rec-table tr.medal-3 td:first-child { box-shadow: inset 3px 0 0 #c99263; }
+    .rec-table tr.medal-1 td.name { color: #8a6410; }
+    .rec-table tr.medal-2 td.name { color: #5c6c80; }
+    .rec-table tr.medal-3 td.name { color: #8a5a30; }
+
+    /* 昵称后的名次徽标：🥇① 🥈② 🥉③ */
+    .rank-badge {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 6px;
+        border-radius: 9px;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.6;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+    .rank-badge.m1 { background: #f7dfa0; color: #6d4d05; }
+    .rank-badge.m2 { background: #d5dde8; color: #47576b; }
+    .rank-badge.m3 { background: #eccdb1; color: #7a4f28; }
     .row-del {
         background: none;
         border: none;
@@ -744,11 +769,11 @@
             </div>
             <div class="field">
                 <label>桌号</label>
-                <input type="text" id="fTable" placeholder="1" maxlength="4" value="1">
+                <input type="text" id="fTable" placeholder="填桌号" maxlength="4" value="">
             </div>
             <div class="field">
                 <label>人数</label>
-                <input type="number" id="fExpected" min="1" max="30" step="1" value="10">
+                <input type="number" id="fExpected" min="1" max="30" step="1" placeholder="填人数" value="">
             </div>
             <div class="field field-recorder">
                 <label>记录人</label>
@@ -1188,7 +1213,7 @@
         if (el.fDate) { el.fDate.value = session.date || ''; }
         el.fSession.value = session.sessionName || '';
         el.fTable.value = session.table || '';
-        el.fExpected.value = session.expected || 10;
+        el.fExpected.value = session.expected || '';
         el.fRecorder.value = session.recorder || '';
         if (el.fReviewer) { el.fReviewer.value = session.reviewer || ''; }
         if (el.fRating) { el.fRating.value = session.rating || ''; }
@@ -1281,7 +1306,14 @@
                 return cell;
             }
             mk(String(i + 1));
-            mk(r.name, 'name');
+            // 昵称单元格：前三名追加「🥇① 🥈② 🥉③」徽标
+            var nameCell = mk(r.name, 'name');
+            if (medal === 1 || medal === 2 || medal === 3) {
+                var badge = document.createElement('span');
+                badge.className = 'rank-badge m' + medal;
+                badge.textContent = (medal === 1 ? '🥇①' : (medal === 2 ? '🥈②' : '🥉③'));
+                nameCell.appendChild(badge);
+            }
             mk((r.points > 0 ? '+' : '') + r.points);
             mk(money(r.total));
             mk('¥' + r.pay);
@@ -1499,7 +1531,9 @@
         lines.push(['序号', '玩家昵称', '本场积分', '总码量', '需支付']);
         for (var i = 0; i < session.rows.length; i++) {
             var r = session.rows[i];
-            var medal = medals[i] && medals[i] <= 3 ? ['🥇', '🥈', '🥉'][medals[i] - 1] + ' ' : '';
+            var medal = medals[i] && medals[i] <= 3
+                ? ['🥇①', '🥈②', '🥉③'][medals[i] - 1] + ' '
+                : '';
             lines.push([String(i + 1), medal + r.name, String(r.points), String(r.total), '¥' + r.pay]);
         }
         lines.push(['', '合计', '', String(s.sumTotal), '¥' + s.sumPay]);
@@ -1507,16 +1541,71 @@
         return lines;
     }
 
-    function download(filename, content, mime) {
-        var blob = new Blob([content], { type: mime });
+    /* ==================== 文件保存（手机友好） ====================
+     * 手机浏览器对 <a download> 支持很差：iOS 会变成「在浏览器中打开」，
+     * 用户只能自己长按另存，非常别扭。
+     *
+     * 优先级：
+     *   1) Web Share API 带文件（iOS 15+ / Android Chrome）
+     *      → 弹出系统分享面板，用户可选「存储到文件 / 存储到照片」
+     *   2) showSaveFilePicker（桌面 Chrome/Edge）→ 原生「另存为」对话框
+     *   3) <a download>（桌面兜底）
+     *   4) 新窗口打开（最后的兜底，至少能看）
+     */
+    function saveFileToDevice(filename, blob, mime) {
+        var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        var file = null;
+        try {
+            file = new File([blob], filename, { type: mime || 'application/octet-stream' });
+        } catch (e) {
+            file = null;
+        }
+
+        // ① Web Share API（手机上最理想：能直接存到相册/文件）
+        if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            return navigator.share({
+                files: [file],
+                title: filename
+            })['catch'](function (err) {
+                // 用户取消分享不算错误，无需提示
+                if (err && err.name === 'AbortError') { return; }
+                fallbackSave(filename, blob);
+            });
+        }
+
+        // ② 桌面：原生另存为对话框
+        if (!isMobile && window.showSaveFilePicker) {
+            try {
+                return window.showSaveFilePicker({
+                    suggestedName: filename,
+                    types: [{ description: filename.split('.').pop().toUpperCase(), accept: { [mime || 'application/octet-stream']: [filename.split('.').pop()] } }]
+                }).then(function (handle) {
+                    return handle.createWritable().then(function (writable) {
+                        return writable.write(blob).then(function () { return writable.close(); });
+                    });
+                })['catch'](function () { fallbackSave(filename, blob); });
+            } catch (e) { /* 落到 ③ */ }
+        }
+
+        // ③ / ④ 兜底
+        fallbackSave(filename, blob);
+    }
+
+    function fallbackSave(filename, blob) {
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
         a.download = filename;
+        a.rel = 'noopener';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+    }
+
+    function download(filename, content, mime) {
+        var blob = new Blob([content], { type: mime });
+        saveFileToDevice(filename, blob, mime);
     }
 
     function exportCsv() {
@@ -1666,15 +1755,20 @@
         for (var r = 0; r < session.rows.length; r++) {
             var row = session.rows[r];
             var ry = y + headH + rowH * r;
-            if (medals[r] === 1) { ctx.fillStyle = '#fff8e1'; ctx.fillRect(24, ry, W - 48, rowH); }
-            else if (medals[r] === 2) { ctx.fillStyle = '#f7f9fc'; ctx.fillRect(24, ry, W - 48, rowH); }
-            else if (medals[r] === 3) { ctx.fillStyle = '#fdf6ef'; ctx.fillRect(24, ry, W - 48, rowH); }
+            if (medals[r] === 1) { ctx.fillStyle = '#fff6dc'; ctx.fillRect(24, ry, W - 48, rowH); }
+            else if (medals[r] === 2) { ctx.fillStyle = '#eef2f8'; ctx.fillRect(24, ry, W - 48, rowH); }
+            else if (medals[r] === 3) { ctx.fillStyle = '#fbeee4'; ctx.fillRect(24, ry, W - 48, rowH); }
             ctx.strokeStyle = '#e3eefc';
             ctx.strokeRect(24, ry, W - 48, rowH);
             var ccx = 24;
+            // 昵称后追加名次标注（与页面表格一致）
+            var nameTxt = row.name;
+            if (medals[r] === 1 || medals[r] === 2 || medals[r] === 3) {
+                nameTxt += '  ' + ['🥇①', '🥈②', '🥉③'][medals[r] - 1];
+            }
             var vals = [
                 String(r + 1),
-                row.name,
+                nameTxt,
                 (row.points > 0 ? '+' : '') + row.points,
                 money(row.total),
                 '¥' + row.pay
@@ -1693,15 +1787,19 @@
         // 三名区
         var my = y + headH + rowH * session.rows.length + 12;
         var medalNames = ['🥇 第一名', '🥈 第二名', '🥉 第三名'];
+        // 三名卡片配色：金 / 银 / 铜
+        var medalCardBg = ['#fff6dc', '#eef2f8', '#fbeee4'];
+        var medalCardBd = ['#e8b64c', '#9fb0c6', '#c99263'];
+        var medalCardTx = ['#8a6410', '#5c6c80', '#8a5a30'];
         for (var m = 0; m < top.length; m++) {
             var bx = 24 + m * ((W - 48) / 3);
             var bw = (W - 48) / 3 - 10;
-            ctx.fillStyle = '#fffdf5';
+            ctx.fillStyle = medalCardBg[top[m].rank - 1] || '#fffdf5';
             ctx.fillRect(bx, my, bw, medalH - 12);
-            ctx.strokeStyle = '#ffd9a6';
+            ctx.strokeStyle = medalCardBd[top[m].rank - 1] || '#ffd9a6';
             ctx.strokeRect(bx, my, bw, medalH - 12);
-            text(medalNames[top[m].rank - 1], bx + bw / 2, my + 18, 13, '#8a9bb3', false, 'center');
-            text(top[m].row.name, bx + bw / 2, my + 40, 17, '#1f6fd0', true, 'center');
+            text(medalNames[top[m].rank - 1], bx + bw / 2, my + 18, 13, medalCardTx[top[m].rank - 1] || '#8a9bb3', false, 'center');
+            text(top[m].row.name, bx + bw / 2, my + 40, 17, medalCardTx[top[m].rank - 1] || '#1f6fd0', true, 'center');
             text(money(top[m].row.total) + ' · ' + (top[m].row.points > 0 ? '+' : '') + top[m].row.points + ' 分',
                 bx + bw / 2, my + 60, 12, '#b0261e', false, 'center');
         }
@@ -1724,17 +1822,13 @@
         var fy = cy + checkH;
         text('记录人：' + (session.recorder || ''), 34, fy + 14, 13, '#455a75');
 
-        var url = canvas.toDataURL('image/png');
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = fileBase(session) + '.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        showPngPreview(canvas, fileBase(session) + '.png');
+        var filename = fileBase(session) + '.png';
+        // ★ 手机上不再直接触发下载（会被浏览器拦成"在浏览器中打开"）：
+        //   改为弹出预览层，让用户用系统分享面板存到相册/文件
+        showPngPreview(canvas, filename);
     }
 
-    // 截图预览层：移动端可长按图片保存到相册
+    // 截图预览层：手机上可「保存到相册」或长按图片
     function showPngPreview(canvas, filename) {
         var mask = document.createElement('div');
         mask.className = 'png-mask';
@@ -1743,19 +1837,28 @@
         canvas.className = 'png-canvas';
         var tip = document.createElement('div');
         tip.className = 'png-tip';
-        tip.textContent = '长按图片可保存到相册，也可点下方按钮下载';
+        var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        tip.textContent = isMobile
+            ? '点「保存到手机」选「存储到照片 / 存储到文件」，也可长按图片保存'
+            : '点「保存到手机」直接下载，也可长按图片保存';
         var btns = document.createElement('div');
         btns.className = 'png-btns';
         var dl = document.createElement('button');
         dl.type = 'button';
-        dl.textContent = '下载 PNG';
+        dl.textContent = '保存到手机';
         dl.addEventListener('click', function () {
-            var a2 = document.createElement('a');
-            a2.href = canvas.toDataURL('image/png');
-            a2.download = filename;
-            document.body.appendChild(a2);
-            a2.click();
-            document.body.removeChild(a2);
+            // canvas → blob → 走统一保存流程（手机弹出系统分享面板）
+            if (canvas.toBlob) {
+                canvas.toBlob(function (blob) {
+                    if (blob) {
+                        saveFileToDevice(filename, blob, 'image/png');
+                    } else {
+                        fallbackSave(filename, new Blob([canvas.toDataURL('image/png')], { type: 'image/png' }));
+                    }
+                }, 'image/png');
+            } else {
+                fallbackSave(filename, new Blob([canvas.toDataURL('image/png')], { type: 'image/png' }));
+            }
         });
         var cls = document.createElement('button');
         cls.type = 'button';
