@@ -23,7 +23,7 @@ import urllib.request
 
 APP_ID = os.environ.get('FEISHU_APP_ID', '')
 APP_SECRET = os.environ.get('FEISHU_APP_SECRET', '')
-APP_TOKEN = os.environ.get('FEISHU_APP_TOKEN', 'REDACTED')
+APP_TOKEN = os.environ.get('FEISHU_APP_TOKEN', '')
 
 TABLES = [
     ('场次表', 'REDACTED', ['更新时间']),

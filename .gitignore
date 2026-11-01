@@ -3,3 +3,14 @@ index.html.bak
 index.html.bak-*
 *.log
 *.tmp
+
+# ==================== 禁止上传（只留本地） ====================
+# 内部文档：含团队/管理员口令、云函数地址、飞书基表标识
+docs/
+# 验收脚本：含口令哈希
+cloudfunctions/recordSync/acceptance.js
+cloudfunctions/recordSync/test/acceptance.js
+# 凭据类文件
+云函数环境变量.json
+.env
+*.env
