@@ -1188,7 +1188,7 @@
             date: todayStr(),
             sessionName: '',
             table: '',
-            expected: 10,
+            expected: '',
             recorder: '',
             reviewer: '',
             rating: '',
@@ -1251,7 +1251,8 @@
         session.date = (el.fDate && el.fDate.value.trim()) || todayStr();
         session.sessionName = el.fSession.value.trim();
         session.table = el.fTable.value.trim();
-        session.expected = Math.max(1, num(el.fExpected.value) || 10);
+        // 人数：留空就保持空（不塞默认值 10），填了就按填的值
+        session.expected = num(el.fExpected.value) ? Math.max(1, num(el.fExpected.value)) : '';
         session.recorder = el.fRecorder.value.trim();
         session.reviewer = el.fReviewer ? el.fReviewer.value.trim() : '';
         session.rating = el.fRating ? el.fRating.value.trim() : '';
@@ -1260,7 +1261,8 @@
     }
 
     function updateSessionHint() {
-        var txt = '共 ' + (session.expected || 10) + ' 人';
+        // 人数留空时不显示默认的 10
+        var txt = session.expected ? ('共 ' + session.expected + ' 人') : '人数待填';
         if (session.table) { txt += ' · ' + session.table + ' 桌'; }
         if (session.sessionName) { txt += ' · ' + session.sessionName; }
         el.sessionHint.textContent = txt;
@@ -1314,7 +1316,9 @@
         el.recTable.style.display = rows.length ? '' : 'none';
         el.recEmpty.style.display = rows.length ? 'none' : '';
         el.recCount.textContent = '已录 ' + rows.length + ' 人' +
-            (rows.length < (session.expected || 10) ? '（还差 ' + ((session.expected || 10) - rows.length) + ' 人）' : '（已满）');
+            (session.expected
+                ? (rows.length < session.expected ? '（还差 ' + (session.expected - rows.length) + ' 人）' : '（已满）')
+                : '');
 
         var medals = rankMap();
         for (var i = 0; i < rows.length; i++) {
@@ -1524,7 +1528,7 @@
                 sub.className = 'hi-sub';
                 var sum = 0;
                 if (item.rows) { for (var k = 0; k < item.rows.length; k++) { sum += item.rows[k].total; } }
-                sub.textContent = (item.expected || 10) + '人制';
+                sub.textContent = item.expected ? (item.expected + '人制') : '';
                 var btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'row-edit';
@@ -2731,7 +2735,7 @@
         if (el.fSession && !session.sessionName) {
             session.sessionName = guessSession(new Date());
         }
-        if (!session.table) { session.table = '1'; }
+        // 桌号不填默认值（留空让用户自己填）
         loadSessionToForm();
         bindEvents();
         startClock();
