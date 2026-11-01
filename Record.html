@@ -2618,6 +2618,8 @@
             this.deviceId = this.getDeviceId();
             this.queue = this.loadQueue();
             this.isAdmin = !!this.getAdminHash();
+            this.tokenWarned = false;
+            this.deviceWarned = false;
             this.enabled = !!(this.getEndpoint() && this.getToken());
             var self = this;
             // 后台定时冲刷（失败自动退避重试）
@@ -2745,7 +2747,22 @@
                 self.lastError = msg || '';
                 self.retry++;
                 // 口令错误属于不可重试的异常：停下并保留队列，等待用户处理
-                if (code === 'TOKEN_INVALID' || code === 'DEVICE_DISABLED') { return; }
+                if (code === 'TOKEN_INVALID') {
+                    // ★ 口令换过之后，还拿着旧二维码的牌友会一直静默失败（数据只留在本机）。
+                    //   给一次明确提示，否则他会以为录进去了。
+                    if (!self.tokenWarned) {
+                        self.tokenWarned = true;
+                        showToast('口令已更新，请重新扫描二维码（本机数据会保留）', 5000);
+                    }
+                    return;
+                }
+                if (code === 'DEVICE_DISABLED') {
+                    if (!self.deviceWarned) {
+                        self.deviceWarned = true;
+                        showToast('本设备已被停用，请联系管理员', 5000);
+                    }
+                    return;
+                }
                 var delay = Math.min(300000, 1000 * Math.pow(2, Math.min(self.retry, 8)));
                 self.schedule(delay);
             }
