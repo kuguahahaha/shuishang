@@ -688,7 +688,7 @@
 
     <!-- ===================== 顶部标题 ===================== -->
     <div class="page-head">
-        <h1>🎴 积分记录表</h1>
+        <h1 id="pageTitle">🎴 积分记录表</h1>
         <div class="clock">
             <div class="clock-date" id="clockDate">----</div>
             <div class="clock-time" id="clockTime">--:--:--</div>
@@ -865,9 +865,9 @@
         -->
     </div>
 
-    <!-- ===================== 团队协作设置 ===================== -->
-    <div class="block">
-        <div class="block-title">⚙️ 团队协作 <span class="hint">可留空，仅本机使用</span></div>
+    <!-- ===================== 团队协作设置（默认隐藏，连点标题 3 次唤出） ===================== -->
+    <div class="block" id="teamBox" style="display:none">
+        <div class="block-title">⚙️ 团队协作 <span class="hint">仅管理员配置，普通用户无需操作</span></div>
         <div class="settings-row">
             <input type="text" id="cfgEndpoint" placeholder="团队表格接口地址（留空 = 仅本机保存）" maxlength="300" autocomplete="off">
             <button id="btnSaveCfg" type="button" class="ghost">保存</button>
@@ -877,7 +877,12 @@
             <button id="btnAdmin" type="button" class="ghost">验证管理员</button>
         </div>
         <div class="tip">填好接口地址后点「保存」，再点「重新绑定口令」输入团队口令即可。<br>
-            之后<b>录入过程中不会出现任何提示</b>，备份状态只在「结束录入」后的结算面板底部显示一行。</div>
+            之后<b>录入过程中不会出现任何提示</b>，数据会在点「录入下一位」时静默备份，状态只在「结束录入」后的结算面板底部显示一行。<br>
+            也可以把下面这个链接直接发给牌友，打开即自动配置好地址：</div>
+        <div class="settings-row">
+            <input type="text" id="cfgShareLink" readonly>
+            <button id="btnCopyLink" type="button" class="ghost">复制链接</button>
+        </div>
     </div>
 
     <!-- ===================== 历史场次 ===================== -->
@@ -983,6 +988,10 @@
         el.btnSaveCfg = $('btnSaveCfg');
         el.btnRebind = $('btnRebind');
         el.btnAdmin = $('btnAdmin');
+        el.teamBox = $('teamBox');
+        el.pageTitle = $('pageTitle');
+        el.cfgShareLink = $('cfgShareLink');
+        el.btnCopyLink = $('btnCopyLink');
         el.bindMask = $('bindMask');
         el.bindToken = $('bindToken');
         el.bindIsAdmin = $('bindIsAdmin');
@@ -1773,6 +1782,36 @@
         el.btnRebind.addEventListener('click', function () { openBind(false); });
         el.btnAdmin.addEventListener('click', function () { openBind(true); });
 
+        /* ---------- 隐藏入口：连点标题 3 次唤出团队协作设置 ---------- */
+        var titleTaps = 0;
+        var titleTimer = null;
+        el.pageTitle.addEventListener('click', function () {
+            titleTaps++;
+            if (titleTimer) { clearTimeout(titleTimer); }
+            titleTimer = setTimeout(function () { titleTaps = 0; }, 1200);
+            if (titleTaps >= 3) {
+                titleTaps = 0;
+                el.teamBox.style.display = '';
+                refreshShareLink();
+                el.cfgEndpoint.focus();
+            }
+        });
+        el.btnCopyLink.addEventListener('click', function () {
+            var link = el.cfgShareLink.value;
+            if (!link) { return; }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(link).then(function () {
+                    window.alert('链接已复制，发给牌友即可');
+                })['catch'](function () {
+                    el.cfgShareLink.select();
+                    window.alert('请手动复制选中的链接');
+                });
+            } else {
+                el.cfgShareLink.select();
+                window.alert('请手动复制选中的链接');
+            }
+        });
+
         /* ---------- 绑定弹窗 ---------- */
         el.bindIsAdmin.addEventListener('change', function () {
             el.bindAdminToken.style.display = el.bindIsAdmin.checked ? '' : 'none';
@@ -2116,7 +2155,8 @@
             this.queue.push(payload);
             if (this.queue.length > this.MAX_QUEUE) { this.queue.shift(); }
             this.saveQueue();
-            this.schedule(800);
+            // 点「录入下一位」后立即静默推送，不等定时器
+            this.schedule(120);
         },
 
         /* ---------- 推送 ---------- */
@@ -2268,11 +2308,58 @@
         }
     };
 
+    /* ==================== 链接参数预配置 ====================
+     * 支持的地址参数（管理员把带参链接发给牌友，打开即自动配好）：
+     *   ?ep=<云函数地址>   预填团队表格接口地址
+     *   ?tk=<团队口令>     预填团队口令（会自动算哈希，不落明文）
+     *   ?at=<管理员口令>   预填管理员口令（同样只存哈希）
+     *   ?admin=1           以管理员模式打开绑定弹窗（仍需输入管理员口令）
+     */
+    function applyUrlParams() {
+        var q = {};
+        var s = (window.location.search || '').replace(/^\?/, '');
+        if (!s) { return false; }
+        var parts = s.split('&');
+        for (var i = 0; i < parts.length; i++) {
+            var kv = parts[i].split('=');
+            if (kv[0]) {
+                q[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1] || '').replace(/\+/g, ' '));
+            }
+        }
+        var changed = false;
+        if (q.ep) {
+            Sync.lsSet(CFG.endpointKey, q.ep);
+            changed = true;
+        }
+        if (q.tk) {
+            Sync.lsSet(CFG.tokenKey, Sha256.hash(q.tk));
+            changed = true;
+        }
+        if (q.at) {
+            Sync.lsSet(CFG.adminKey, Sha256.hash(q.at));
+            Sync.isAdmin = true;
+            changed = true;
+        }
+        if (q.admin) {
+            Sync.pendingAdmin = true;
+            changed = true;
+        }
+        return changed;
+    }
+
+    /* 生成分享链接（带接口地址，牌友打开即自动配置） */
+    function refreshShareLink() {
+        if (!el.cfgShareLink) { return; }
+        var ep = Sync.getEndpoint();
+        var base = window.location.href.split('?')[0];
+        el.cfgShareLink.value = ep ? (base + '?ep=' + encodeURIComponent(ep)) : base;
+    }
+
     /* ==================== 绑定弹窗控制 ==================== */
     function openBind(forceAdmin) {
         el.bindMask.style.display = '';
         el.bindErr.textContent = '';
-        el.bindIsAdmin.checked = !!forceAdmin;
+        el.bindIsAdmin.checked = !!forceAdmin || !!Sync.pendingAdmin;
         el.bindAdminToken.style.display = forceAdmin ? '' : 'none';
         setTimeout(function () { el.bindToken.focus(); }, 60);
     }
@@ -2284,6 +2371,12 @@
     function init() {
         cacheDom();
         Sync.init();
+        // 链接参数预配置（管理员分享链接给牌友）
+        var fromLink = applyUrlParams();
+        if (fromLink) {
+            Sync.enabled = !!(Sync.getEndpoint() && Sync.getToken());
+            Sync.isAdmin = !!Sync.getAdminHash();
+        }
         session = newSession();
         session.deviceId = Sync.deviceId;
         // 场次：按当前打开时间自动匹配（用户可自行更改）
@@ -2299,10 +2392,11 @@
         renderHistory();
         refreshEntryState();
         el.recName.focus();
-        // 已配置接口地址但还没绑定口令 → 提示绑定一次
+        // 已配置接口地址但还没绑定口令 → 提示绑定一次（链接里已带口令的跳过）
         if (Sync.getEndpoint() && !Sync.getToken()) {
             setTimeout(function () { openBind(false); }, 400);
         }
+        refreshShareLink();
     }
 
     if (document.readyState === 'loading') {
