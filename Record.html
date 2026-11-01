@@ -925,7 +925,7 @@
 <div class="modal-mask" id="bindMask" style="display:none">
     <div class="modal-box">
         <div class="modal-title">团队访问口令</div>
-        <div class="modal-desc">首次使用需输入一次团队口令，输入一次即可，之后不再提示。</div>
+        <div class="modal-desc" id="bindDesc">首次使用需输入一次团队口令，输入一次即可，之后不再提示。</div>
         <input type="text" id="bindToken" placeholder="请输入团队口令" maxlength="64" autocomplete="off">
         <div class="modal-row">
             <input type="checkbox" id="bindIsAdmin">
@@ -1025,6 +1025,7 @@
         el.bindAdminToken = $('bindAdminToken');
         el.bindErr = $('bindErr');
         el.btnBindOk = $('bindOk');
+        el.bindDesc = $('bindDesc');
         el.btnBindCancel = $('bindCancel');
         el.faceInputs = FACES.map(function (f) { return $(f.id); });
     }
@@ -2197,14 +2198,70 @@
             });
         },
 
+        /* ---------- 历史补传 ----------
+         * 场景：牌友之前用「不带参数的旧链接」录过数据（只存本机没上传），
+         * 后来才拿到正确链接 → 把本机历史补传上去。
+         * 用 sessionId 去重，云端 upsert 不会产生重复行。
+         */
+        backfillHistory: function (cb) {
+            var self = this;
+            var list;
+            try {
+                list = JSON.parse(localStorage.getItem('wc_record_sessions_v1') || '[]');
+            } catch (e) { list = []; }
+            if (!Array.isArray(list) || !list.length) { cb(0, 0); return; }
+            var items = [];
+            for (var i = 0; i < list.length && i < 30; i++) {
+                var s = list[i];
+                if (!s || !s.rows || !s.rows.length) { continue; }
+                var meta = {
+                    date: s.date || '', sessionName: s.sessionName || '', table: s.table || '',
+                    expected: s.expected || 10, recorder: s.recorder || '',
+                    reviewer: s.reviewer || '', rating: s.rating || '', deviceId: self.deviceId
+                };
+                items.push({ type: 'session', key: meta.date + '|' + meta.sessionName + '|' + meta.table, session: meta });
+                for (var j = 0; j < s.rows.length; j++) {
+                    var r = s.rows[j];
+                    items.push({
+                        type: 'record',
+                        key: meta.date + '|' + meta.sessionName + '|' + meta.table + '|' + r.name,
+                        session: meta,
+                        row: {
+                            name: r.name, chips: r.chips, cards: r.cards, total: r.total,
+                            cardGap: r.cardGap, pay: r.pay, points: r.points
+                        }
+                    });
+                }
+            }
+            if (!items.length) { cb(0, 0); return; }
+            var endpoint = self.getEndpoint();
+            try {
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'sync', deviceId: self.deviceId,
+                        tokenHash: self.getToken(), adminHash: self.getAdminHash(),
+                        items: items
+                    })
+                }).then(function (res) { return res.json(); })
+                  .then(function (raw) {
+                      var data = parseCloudResponse(raw) || {};
+                      cb(data.count || 0, items.length);
+                  })['catch'](function () { cb(0, items.length); });
+            } catch (e) { cb(0, items.length); }
+        },
+
         /* ---------- 记录入队 ---------- */
         enqueue: function (payload) {
             if (!this.enabled) { return; }          // 本地模式不入队
             this.queue.push(payload);
             if (this.queue.length > this.MAX_QUEUE) { this.queue.shift(); }
             this.saveQueue();
-            // 点「录入下一位」后立即静默推送，不等定时器
-            this.schedule(120);
+            // ★ 立即发起推送（不用 setTimeout）
+            //   原因：浏览器会把后台标签页的 setTimeout 节流到分钟级，
+            //   牌友录完就关页面时数据会丢。同步发起最可靠。
+            try { this.flush(); } catch (e) { this.schedule(120); }
         },
 
         /* ---------- 推送 ---------- */
@@ -2461,6 +2518,12 @@
 
     /* ==================== 绑定弹窗控制 ==================== */
     function openBind(forceAdmin) {
+        // 未配置接口时（打开的是不带参数的旧链接）→ 明确说明
+        if (!Sync.getEndpoint() && !Sync.getToken()) {
+            el.bindDesc.textContent = '这个链接还没配置好，请输入团队口令完成设置。设置后你的记录会自动汇总到团队表格。';
+        } else {
+            el.bindDesc.textContent = '首次使用需输入一次团队口令，输入一次即可，之后不再提示。';
+        }
         el.bindMask.style.display = '';
         el.bindErr.textContent = '';
         el.bindIsAdmin.checked = !!forceAdmin || !!Sync.pendingAdmin;
@@ -2484,6 +2547,18 @@
         }
         // ★ 管理员身份需要向云端校验（本地标记不可信）
         //   校验通过才显示结算面板底部那行状态；失败则静默降级为普通用户
+        // ★ 配置就绪（首次拿到正确链接）→ 自动把本机历史补传上去
+        //   解决「之前用旧链接录的数据只在本机」的遗漏
+        try {
+            if (Sync.enabled) {
+                setTimeout(function () {
+                    Sync.backfillHistory(function (done, total) {
+                        if (done > 0) { console.log('已补传历史数据 ' + done + '/' + total + ' 条'); }
+                    });
+                }, 1500);
+            }
+        } catch (e) { }
+
         if (Sync.getAdminHash() && Sync.getEndpoint() && Sync.getToken()) {
             Sync.verifyRole(function (ok, msg, role) {
                 if (ok && role === 'admin') {
@@ -2511,9 +2586,10 @@
         renderHistory();
         refreshEntryState();
         el.recName.focus();
-        // 已配置接口地址但还没绑定口令 → 提示绑定一次（链接里已带口令的跳过）
-        if (Sync.getEndpoint() && !Sync.getToken()) {
-            setTimeout(function () { openBind(false); }, 400);
+        // ★ 没配置团队接口（打开的是不带参数的旧链接）→ 明确提示并给出口令输入
+        //   否则数据只存本机、用户以为已上传，排查极其困难
+        if (!Sync.enabled) {
+            setTimeout(function () { openBind(false); }, 500);
         }
         refreshShareLink();
     }
