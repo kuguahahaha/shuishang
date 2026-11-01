@@ -25,10 +25,11 @@ APP_ID = os.environ.get('FEISHU_APP_ID', '')
 APP_SECRET = os.environ.get('FEISHU_APP_SECRET', '')
 APP_TOKEN = os.environ.get('FEISHU_APP_TOKEN', '')
 
+# ★ 表 ID 不写进仓库（和云函数保持一致，全部从环境变量读）
 TABLES = [
-    ('场次表', 'REDACTED', ['更新时间']),
-    ('积分记录表', 'REDACTED', ['更新时间']),
-    ('设备表', 'REDACTED', ['首次出现', '最近出现']),
+    ('场次表', os.environ.get('TABLE_SESSIONS', ''), ['更新时间']),
+    ('积分记录表', os.environ.get('TABLE_RECORDS', ''), ['更新时间']),
+    ('设备表', os.environ.get('TABLE_DEVICES', ''), ['首次出现', '最近出现']),
 ]
 
 BASE = 'https://open.feishu.cn/open-apis'
@@ -78,8 +79,9 @@ def convert(s):
 
 
 def main():
-    if not APP_ID or not APP_SECRET:
-        print('缺少凭据：请先设置环境变量 FEISHU_APP_ID / FEISHU_APP_SECRET')
+    if not APP_ID or not APP_SECRET or not APP_TOKEN or not all(t[1] for t in TABLES):
+        print('缺少配置：请先设置环境变量 FEISHU_APP_ID / FEISHU_APP_SECRET / '
+              'FEISHU_APP_TOKEN / TABLE_SESSIONS / TABLE_RECORDS / TABLE_DEVICES')
         print('  export FEISHU_APP_ID=...')
         print('  export FEISHU_APP_SECRET=...')
         sys.exit(1)

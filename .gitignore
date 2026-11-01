@@ -18,3 +18,5 @@ cloudfunctions/recordSync/test/acceptance.js
 cloudfunctions/
 # 短链跳转页：里面含云函数地址+团队口令，已改用二维码直连长链接，不需要
 g/
+# 本地推送脚本（含 PAT 用法说明，不入库）
+deploy.bat
