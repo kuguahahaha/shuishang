@@ -1409,6 +1409,33 @@
         return map;
     }
 
+    /* ---------- 名次徽标（飞书表用） ----------
+     * 与页面表格上的 🥇①🥈②🥉③ 保持一致。
+     * Unicode 码点递增（🥇<🥈<🥉），在飞书里按文本排序也正好是名次顺序。 */
+    var RANK_BADGE = { 1: '🥇①', 2: '🥈②', 3: '🥉③' };
+
+    /* 名次变化时补推：录入/删除/改名都会改变别人的名次，
+     * 云端一次只收到一行、算不出全场名次 → 必须由前端算好一起推上去。
+     * 只推「名次真的变了」的行，避免每次录入都重写全表。 */
+    function syncRankChanges() {
+        var medals = rankMap();
+        for (var i = 0; i < session.rows.length; i++) {
+            var row = session.rows[i];
+            var newRank = medals[i] || 0;
+            var badge = RANK_BADGE[newRank] || '';
+            if (row.rank === newRank && row.rankBadge === badge) { continue; }
+            row.rank = newRank;
+            row.rankBadge = badge;
+            if (!Sync.enabled || !row.id) { continue; }
+            Sync.enqueue({
+                type: 'record',
+                key: sessionKeyOf(session) + '|' + row.id,
+                session: sessionMetaOf(session),
+                row: row
+            });
+        }
+    }
+
     function loadRowToEntry(idx) {
         var r = session.rows[idx];
         editingIndex = idx;
@@ -1441,6 +1468,8 @@
         if (row && row.id) {
             Sync.enqueueDelete(sessionKeyOf(session) + '|' + row.id);
         }
+        // ★ 删掉一人后，后面的人名次会前移 → 补推
+        syncRankChanges();
     }
 
     /* ==================== 结算渲染 ==================== */
@@ -2117,6 +2146,8 @@
             session: sessionMetaOf(session),
             row: row
         });
+        // ★ 名次会随新人录入而变化 → 把名次变了的行补推一次
+        syncRankChanges();
     }
 
     function doFinish() {
@@ -2140,6 +2171,8 @@
             key: sessionKeyOf(session),
             session: sessionMetaOf(session)
         });
+        // ★ 结束录入时名次已最终确定 → 补推一遍全场的名次
+        syncRankChanges();
         el.settleBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -2168,7 +2201,9 @@
 
     /* ==================== 场次标识与元信息（备份用） ==================== */
     function sessionKeyOf(s) {
-        return (s.date || '') + '|' + (s.sessionName || '') + '|' + (s.table || '');
+        // ★ 分隔符必须与云函数一致（云端 sessionId = 日期-场次-桌号）
+        //   原来用 '|' → 记录键对不上云端的 sessionId → 删除/补传都失效
+        return (s.date || '') + '-' + (s.sessionName || '') + '-' + (s.table || '');
     }
     function sessionMetaOf(s) {
         return {
@@ -2371,7 +2406,7 @@
                     var r = s.rows[j];
                     items.push({
                         type: 'record',
-                        key: meta.date + '|' + meta.sessionName + '|' + meta.table + '|' + r.name,
+                        key: meta.date + '-' + meta.sessionName + '-' + meta.table + '|' + (r.id || r.name),
                         session: meta,
                         row: {
                             name: r.name, chips: r.chips, cards: r.cards, total: r.total,
