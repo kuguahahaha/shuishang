@@ -154,6 +154,23 @@
         gap: 8px;
         flex-wrap: wrap;
     }
+    /* 录入区标题行：标题 + 昵称框 + 「第 N 位」，永不换行，「第 N 位」固定最右 */
+    .block-title.row-entry {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+    }
+    .block-title.row-entry > span:first-child {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+    .block-title.row-entry .rec-name {
+        flex: 1 1 auto;
+        max-width: none;
+    }
+    .block-title.row-entry .rec-step {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
     .block-title .hint {
         font-size: 11px;
         font-weight: 400;
@@ -173,7 +190,7 @@
     }
 
     /* ===================== 场次信息 ===================== */
-    /* 场次 / 桌号 / 应到人数 / 记录人 —— 四项一行 */
+    /* 场次 / 桌号 / 人数 / 记录人 —— 四项一行 */
     .field-grid {
         display: flex;
         flex-wrap: nowrap;
@@ -188,7 +205,17 @@
     }
     /* 场次字段稍宽（下拉内容较长） */
     .field.field-session {
-        flex: 1.55 1 0;
+        flex: 1.45 1 0;
+    }
+    /* 记录人字段：名字较长，权重稍大保证输入框可用 */
+    .field.field-recorder {
+        flex: 1.15 1 0;
+    }
+    /* 场次下拉内容较长，字号收紧 + 减 padding，保证完整显示 */
+    .field.field-session select {
+        font-size: 11.5px;
+        padding: 6px 2px;
+        letter-spacing: -0.2px;
     }
     .field label {
         font-size: 11px;
@@ -220,7 +247,7 @@
     .rec-name {
         flex: 1 1 auto;
         width: auto;
-        min-width: 0;
+        min-width: 60px;
         max-width: 260px;
         margin: 0;
         padding: 5px 8px;
@@ -720,10 +747,10 @@
                 <input type="text" id="fTable" placeholder="1" maxlength="4" value="1">
             </div>
             <div class="field">
-                <label>应到人数</label>
+                <label>人数</label>
                 <input type="number" id="fExpected" min="1" max="30" step="1" value="10">
             </div>
-            <div class="field">
+            <div class="field field-recorder">
                 <label>记录人</label>
                 <input type="text" id="fRecorder" placeholder="必填" maxlength="10">
             </div>
@@ -743,7 +770,7 @@
 
     <!-- ===================== 录入区 ===================== -->
     <div class="block block-orange">
-        <div class="block-title">
+        <div class="block-title row-entry">
             <span>✍️ 逐人录入</span>
             <input type="text" id="recName" class="rec-name" placeholder="输入玩家昵称" maxlength="12" autocomplete="off">
             <span class="rec-step" id="recStep">第 1 位</span>
@@ -1053,12 +1080,12 @@
         return best.label;
     }
 
-    /* 四项必填：场次 / 桌号 / 应到人数 / 记录人 */
+    /* 四项必填：场次 / 桌号 / 人数 / 记录人 */
     function missingRequired() {
         var lack = [];
         if (!el.fSession || !el.fSession.value) { lack.push('场次'); }
         if (!el.fTable || !el.fTable.value.trim()) { lack.push('桌号'); }
-        if (!el.fExpected || !num(el.fExpected.value)) { lack.push('应到人数'); }
+        if (!el.fExpected || !num(el.fExpected.value)) { lack.push('人数'); }
         if (!el.fRecorder || !el.fRecorder.value.trim()) { lack.push('记录人'); }
         return lack;
     }
@@ -1180,7 +1207,7 @@
     }
 
     function updateSessionHint() {
-        var txt = '应到 ' + (session.expected || 10) + ' 人';
+        var txt = '共 ' + (session.expected || 10) + ' 人';
         if (session.table) { txt += ' · ' + session.table + ' 桌'; }
         if (session.sessionName) { txt += ' · ' + session.sessionName; }
         el.sessionHint.textContent = txt;
@@ -1380,7 +1407,7 @@
             (s.diff > 0 ? '+' : '') + money(s.diff) + '</b>（上限 3 万）' + diffTxt +
             '</div>';
         html += '<div class="check-line">需支付合计：<b>¥' + money(s.sumPay) + '</b>　|　已录 <b>' +
-            s.count + '</b> / 应到 ' + s.expected + ' 人' +
+            s.count + '</b> / 共 ' + s.expected + ' 人' +
             (s.count < s.expected ? '（还差 ' + (s.expected - s.count) + ' 人）' : '') +
             '</div>';
         // 备份状态：整个页面唯一允许出现备份信息的位置
@@ -1493,7 +1520,7 @@
         var meta = [
             ['水上俱乐部 · 活动签到与积分记录表'],
             ['日期', session.date, '场次', session.sessionName, '桌号', session.table],
-            ['应到人数', String(session.expected), '记录人', session.recorder]
+            ['人数', String(session.expected), '记录人', session.recorder]
         ];
         var out = [];
         for (var i = 0; i < meta.length; i++) {
@@ -1603,7 +1630,7 @@
         // 场次信息
         text('日期：' + (session.date || '') + '　　场次：' + (session.sessionName || '') +
             '　　桌号：' + (session.table || ''), W / 2, 58, 14, '#455a75', false, 'center');
-        text('应到人数：' + s.expected + ' 人', W / 2, 80, 13, '#7a8ba3', false, 'center');
+        text('人数：' + s.expected + ' 人', W / 2, 80, 13, '#7a8ba3', false, 'center');
 
         // 表头
         var y = titleH;
@@ -1683,7 +1710,7 @@
         text('筹码差额：Σ总码量 ' + money(s.sumTotal) + ' − 16万×' + s.expected + ' = ' +
             (s.diff > 0 ? '+' : '') + money(s.diff) + '（上限 3 万）' + (diffBad ? '　超了，需复核！' : '　合格'),
             34, cy + 22, 14, diffBad ? '#c62828' : '#2e7d32', true);
-        text('需支付合计：¥' + money(s.sumPay) + '　|　已录 ' + s.count + ' / 应到 ' + s.expected + ' 人' +
+        text('需支付合计：¥' + money(s.sumPay) + '　|　已录 ' + s.count + ' / 共 ' + s.expected + ' 人' +
             (s.count < s.expected ? '（还差 ' + (s.expected - s.count) + ' 人）' : ''),
             34, cy + 50, 14, '#455a75', false);
 
@@ -1893,7 +1920,7 @@
 
     /* ==================== 录入与结束 ==================== */
     function doNext() {
-        // 四项必填校验：场次 / 桌号 / 应到人数 / 记录人
+        // 四项必填校验：场次 / 桌号 / 人数 / 记录人
         var lack = missingRequired();
         if (lack.length) {
             window.alert('请先填写：' + lack.join('、'));
@@ -1948,7 +1975,7 @@
         var s = calcSummary();
         var msg = '已录 ' + s.count + ' 人';
         if (s.count < s.expected) {
-            msg += '，还差 ' + (s.expected - s.count) + ' 人（应到 ' + s.expected + ' 人）';
+            msg += '，还差 ' + (s.expected - s.count) + ' 人（共 ' + s.expected + ' 人）';
         }
         msg += '。确认结束录入并生成结算？';
         if (!window.confirm(msg)) { return; }
