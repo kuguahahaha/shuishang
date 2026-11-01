@@ -378,6 +378,14 @@
         box-shadow: none;
         font-weight: 600;
     }
+    /* 导出按钮：把标题行剩下的宽度铺满（高度仍保持紧凑） */
+    button.btn-mini-wide {
+        flex: 1 1 auto;
+        min-width: 0;
+        text-align: center;
+        padding: 6px 12px;
+        font-size: 13px;
+    }
     button.secondary {
         background: #ffffff;
         color: #2b85ff;
@@ -943,7 +951,7 @@
     <div class="block">
         <div class="block-title">
             <span>💾 导出</span>
-            <button id="btnPng" type="button" class="btn-mini">导出图片</button>
+            <button id="btnPng" type="button" class="btn-mini btn-mini-wide">导出图片</button>
         </div>
         <!-- 复制表格文本 / JSON 导入导出：功能保留在代码里，界面暂不展示
         <div class="btn-row" style="margin-top:8px">
