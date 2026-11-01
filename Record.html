@@ -2295,7 +2295,7 @@
          */
         el.btnClear.addEventListener('click', function () {
             if (session.rows.length) {
-                if (!window.confirm('开始录入下一场？\n当前这 ' + session.rows.length + ' 条记录会保留（云端不动），只是界面切到新的一场。')) { return; }
+                if (!window.confirm('开始录入下一场？')) { return; }
             }
             // ① 当前场次标记 closed → 刷新页面时不会被「自动接回进行中场次」捡回来
             try {
