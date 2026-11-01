@@ -1610,6 +1610,10 @@
                       cloudError = '';
                   } else {
                       cloudError = data.message || '拉取失败';
+                      // 云端还是旧版云函数时只回「未知操作」，翻译成人话
+                      if (cloudError.indexOf('未知操作') >= 0) {
+                          cloudError = '云端未升级（请上传新版云函数 zip）';
+                      }
                   }
                   renderHistory();
                   if (cb) { cb(!!data.ok, data.message || ''); }
