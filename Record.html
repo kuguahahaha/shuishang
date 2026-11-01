@@ -3017,7 +3017,7 @@
     /* ★ 一次性标记键：不能以 wc_ 开头，否则会被自己删掉
      *   之前是「每次打开都清空」，会导致：① 本机历史场次永远留不下
      *   ② 未推送的待同步队列被清空 → 录入的数据丢失、云端也看不到 */
-    var PURGE_FLAG = 'sx_purge_v3_done';
+    var PURGE_FLAG = 'sx_purge_v4_done';
     function purgeLocalCache() {
         try {
             if (localStorage.getItem(PURGE_FLAG) === '1') { return 0; }
