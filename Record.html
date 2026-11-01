@@ -896,7 +896,7 @@
     <div class="block" id="teamBox" style="display:none">
         <div class="block-title">⚙️ 团队协作 <span class="hint">仅管理员配置，普通用户无需操作</span></div>
         <div class="settings-row">
-            <input type="text" id="cfgEndpoint" placeholder="团队表格接口地址（留空 = 仅本机保存）" maxlength="300" autocomplete="off">
+            <input type="text" id="cfgEndpoint" placeholder="接口地址（留空 = 仅本机保存）" maxlength="300" autocomplete="off">
             <button id="btnSaveCfg" type="button" class="ghost">保存</button>
         </div>
         <div class="settings-row">
@@ -904,7 +904,7 @@
             <button id="btnAdmin" type="button" class="ghost">验证管理员</button>
         </div>
         <div class="tip">填好接口地址后点「保存」，再点「重新绑定口令」输入团队口令即可。<br>
-            之后<b>录入过程中不会出现任何提示</b>，数据会在点「录入下一位」时静默备份，状态只在「结束录入」后的结算面板底部显示一行。<br>
+            之后<b>录入过程中不会出现任何提示</b>，状态只在「结束录入」后的结算面板底部显示一行。<br>
             也可以把下面这个链接直接发给牌友，打开即自动配置好地址：</div>
         <div class="settings-row">
             <input type="text" id="cfgShareLink" readonly>
@@ -925,7 +925,7 @@
 <div class="modal-mask" id="bindMask" style="display:none">
     <div class="modal-box">
         <div class="modal-title">团队访问口令</div>
-        <div class="modal-desc">首次使用需输入一次团队口令，用于把你的记录汇总到团队表格。输入一次即可，之后不再提示。</div>
+        <div class="modal-desc">首次使用需输入一次团队口令，输入一次即可，之后不再提示。</div>
         <input type="text" id="bindToken" placeholder="请输入团队口令" maxlength="64" autocomplete="off">
         <div class="modal-row">
             <input type="checkbox" id="bindIsAdmin">
@@ -2337,7 +2337,10 @@
             };
         },
 
-        /* ---------- 结算面板底部那一行（唯一允许出现备份信息的地方） ---------- */
+        /* ---------- 结算面板底部那一行（唯一允许出现备份信息的地方） ----------
+         * 措辞原则：全程不出现「同步 / 上传 / 云端 / 备份 / 飞书」等字样，
+         * 只用中性表述说明「数据已记录 / 团队表格」。
+         */
         statusHtml: function () {
             var st = this.status();
             if (st.mode === 'local') {
@@ -2347,9 +2350,9 @@
                 return '<div class="backup-line bad">⚠ ' + escapeHtml(st.error) + '</div>';
             }
             if (st.pending > 0) {
-                return '<div class="backup-line warn">⚠ ' + st.pending + ' 条待上传（网络恢复后自动补传）</div>';
+                return '<div class="backup-line warn">⚠ ' + st.pending + ' 条待完成（网络恢复后自动继续）</div>';
             }
-            return '<div class="backup-line">✓ 已备份到团队表格</div>';
+            return '<div class="backup-line">✓ 已记录到团队表格</div>';
         }
     };
 
