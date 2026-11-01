@@ -409,6 +409,37 @@
         opacity: 0.45;
         cursor: not-allowed;
     }
+    /* 「录入下一位」未填齐时的置灰状态：只是看起来灰，仍可点击 → 点了给提示 */
+    button.btn-locked {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+    /* 轻提示 */
+    .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 96px;
+        transform: translateX(-50%) translateY(10px);
+        max-width: 84%;
+        padding: 10px 16px;
+        background: rgba(23, 42, 68, 0.94);
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.5;
+        border-radius: 12px;
+        box-shadow: 0 8px 22px rgba(15, 30, 55, 0.3);
+        text-align: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s ease, transform 0.18s ease;
+        z-index: 3000;
+    }
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 
     /* ===================== 记录表 ===================== */
     .rec-table {
@@ -997,6 +1028,9 @@
 
 </div>
 
+<!-- 轻提示（不阻断操作，比 alert 更适合手机） -->
+<div class="toast" id="toast"></div>
+
 <!-- ===================== 团队访问口令 绑定弹窗 ===================== -->
 <div class="modal-mask" id="bindMask" style="display:none">
     <div class="modal-box">
@@ -1088,6 +1122,7 @@
         el.hisCount = $('hisCount');
         el.hisBlock = $('hisBlock');
         el.btnHisRefresh = $('btnHisRefresh');
+        el.toast = $('toast');
         el.cfgEndpoint = $('cfgEndpoint');
         el.btnSaveCfg = $('btnSaveCfg');
         el.btnRebind = $('btnRebind');
@@ -1174,12 +1209,32 @@
         return lack;
     }
 
-    /* 未填齐时禁用「录入下一位」并给出提示 */
+    /* 轻提示：底部浮出一条，2.2 秒自动消失（比 alert 更适合手机，也不拦操作） */
+    function showToast(msg, ms) {
+        var t = el.toast || $('toast');
+        if (!t) { return; }
+        t.textContent = msg;
+        t.classList.add('show');
+        if (showToast._timer) { clearTimeout(showToast._timer); }
+        showToast._timer = setTimeout(function () { t.classList.remove('show'); }, ms || 2200);
+    }
+
+    /* 未填齐时「录入下一位」置灰 —— ★ 不设 disabled，
+     *   否则浏览器不派发 click 事件，用户点了毫无反应也看不到缺什么。
+     *   改成置灰样式 + 点击后弹出「请先填写：…」提示。
+     */
     function refreshEntryState() {
         var lack = missingRequired();
         if (el.btnNext) {
-            el.btnNext.disabled = lack.length > 0;
-            el.btnNext.title = lack.length ? ('请先填写：' + lack.join('、')) : '';
+            var locked = lack.length > 0;
+            el.btnNext.disabled = false;
+            if (locked) {
+                el.btnNext.classList.add('btn-locked');
+            } else {
+                el.btnNext.classList.remove('btn-locked');
+            }
+            el.btnNext.setAttribute('aria-disabled', locked ? 'true' : 'false');
+            el.btnNext.title = locked ? ('请先填写：' + lack.join('、')) : '';
         }
         return lack;
     }
@@ -2263,7 +2318,7 @@
         // 四项必填校验：场次 / 桌号 / 人数 / 记录人
         var lack = missingRequired();
         if (lack.length) {
-            window.alert('请先填写：' + lack.join('、'));
+            showToast('请先填写：' + lack.join('、'));
             refreshEntryState();
             return;
         }
