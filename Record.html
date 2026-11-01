@@ -1704,13 +1704,13 @@
         }
         top.sort(function (a, b) { return a.rank - b.rank; });
 
-        var rowH = 34;                       // 数据行高
-        var headH = 30;                      // 表头高
+        var rowH = 42;                       // 数据行高（加大，手机上看得更清）
+        var headH = 38;                      // 表头高
         var W = 900;
-        var titleH = 78;                     // 标题 + 场次信息（全部一行）
-        var medalH = 70;                     // 三名区
-        var checkH = 92;                     // 差额/合计区
-        var footH = 20;                      // 底部留白（记录人已移到头部）
+        var titleH = 86;                     // 标题 + 场次信息（全部一行）
+        var medalH = 120;                    // 三名区（加高，装得下「码量 · 积分」那一行）
+        var checkH = 104;                    // 差额/合计区
+        var footH = 24;                      // 底部留白（记录人已移到头部）
         var H = titleH + headH + rowH * session.rows.length + medalH + checkH + footH + 28;
 
         var canvas = document.createElement('canvas');
@@ -1731,14 +1731,14 @@
         }
 
         // 标题
-        text('水上俱乐部 · 活动签到与积分记录表', W / 2, 26, 22, '#1f6fd0', true, 'center');
+        text('水上俱乐部 · 活动签到与积分记录表', W / 2, 28, 24, '#1f6fd0', true, 'center');
         // 场次信息：日期 / 场次 / 桌号 / 人数 / 记录人 全部一行，记录人紧跟人数后面
         text('日期：' + (session.date || '') +
             '　场次：' + (session.sessionName || '') +
             '　桌号：' + (session.table || '') +
             '　人数：' + s.expected +
             '　记录人：' + (session.recorder || ''),
-            W / 2, 58, 13, '#455a75', false, 'center');
+            W / 2, 62, 14, '#455a75', false, 'center');
 
         // 表头
         var y = titleH;
@@ -1760,7 +1760,7 @@
         for (var c = 0; c < cols.length; c++) {
             var cw = cols[c].w * scaleX;
             var tx = cols[c].align === 'center' ? cx + cw / 2 : cx + 8;
-            text(cols[c].t, tx, y + headH / 2, 14, '#1f6fd0', true, cols[c].align);
+            text(cols[c].t, tx, y + headH / 2, 15, '#1f6fd0', true, cols[c].align);
             cx += cw;
         }
 
@@ -1790,7 +1790,7 @@
                 var cw2 = cols[v].w * scaleX;
                 var tx2 = cols[v].align === 'center' ? ccx + cw2 / 2 : ccx + 8;
                 var isPts = (v === 2);
-                text(vals[v], tx2, ry + rowH / 2, isPts ? 16 : 14,
+                text(vals[v], tx2, ry + rowH / 2, isPts ? 18 : 15,
                     isPts ? (row.points < 0 ? '#b0261e' : '#1f6fd0') : '#22344d',
                     isPts, cols[v].align);
                 ccx += cw2;
@@ -1808,16 +1808,21 @@
         //   并列时 rank 会重复（如两人都 rank=2），会导致出现两张「第二名」卡片。
         for (var m = 0; m < top.length && m < 3; m++) {
             var slot = m;   // 0/1/2 → 第一/二/三名
-            var bx = 24 + m * ((W - 48) / 3);
-            var bw = (W - 48) / 3 - 10;
+            // 卡片之间留 16px 间距，边框才不会看起来粘连
+            var cardGap = 16;
+            var cardW = (W - 48 - cardGap * 2) / 3;
+            var bx = 24 + m * (cardW + cardGap);
+            var bw = cardW;
+            var cardH = medalH - 12;
             ctx.fillStyle = medalCardBg[slot];
-            ctx.fillRect(bx, my, bw, medalH - 12);
+            ctx.fillRect(bx, my, bw, cardH);
             ctx.strokeStyle = medalCardBd[slot];
-            ctx.strokeRect(bx, my, bw, medalH - 12);
-            text(medalNames[slot], bx + bw / 2, my + 18, 13, medalCardTx[slot], false, 'center');
-            text(top[m].row.name, bx + bw / 2, my + 40, 17, medalCardTx[slot], true, 'center');
+            ctx.strokeRect(bx, my, bw, cardH);
+            // 名次 / 昵称 / 码量·积分 三行都排在框内
+            text(medalNames[slot], bx + bw / 2, my + 26, 15, medalCardTx[slot], false, 'center');
+            text(top[m].row.name, bx + bw / 2, my + 58, 22, medalCardTx[slot], true, 'center');
             text(money(top[m].row.total) + ' · ' + top[m].row.points + ' 分',
-                bx + bw / 2, my + 60, 12, top[m].row.points < 0 ? '#b0261e' : '#455a75', false, 'center');
+                bx + bw / 2, my + 88, 14, top[m].row.points < 0 ? '#b0261e' : '#455a75', false, 'center');
         }
 
         // 差额与合计
@@ -1829,10 +1834,10 @@
         ctx.strokeRect(24, cy, W - 48, checkH - 16);
         text('筹码差额：Σ总码量 ' + money(s.sumTotal) + ' − 16万×' + s.expected + ' = ' +
             (s.diff > 0 ? '+' : '') + money(s.diff) + '（上限 3 万）' + (diffBad ? '　超了，需复核！' : '　合格'),
-            34, cy + 22, 14, diffBad ? '#c62828' : '#2e7d32', true);
+            34, cy + 26, 15, diffBad ? '#c62828' : '#2e7d32', true);
         text('需支付合计：' + money(s.sumPay) + '　|　已录 ' + s.count + ' / 共 ' + s.expected + ' 人' +
             (s.count < s.expected ? '（还差 ' + (s.expected - s.count) + ' 人）' : ''),
-            34, cy + 50, 14, '#455a75', false);
+            34, cy + 62, 15, '#455a75', false);
 
         // 记录人已移到头部信息行，这里不再重复
 
@@ -1863,16 +1868,10 @@
         var dataUrl = canvas.toDataURL('image/png');
         img.src = dataUrl;
 
-        var tip = document.createElement('div');
-        tip.className = 'png-tip';
-        var isMobile = /Android|iPhone|iPad|iPod|Mobile|WeChat|MicroMessenger/i.test(navigator.userAgent);
-        tip.textContent = isMobile
-            ? '长按上面的图片 → 选「保存到相册」，即可存到手机'
-            : '右键图片可另存为；或点下方「下载 PNG」';
-
         var btns = document.createElement('div');
         btns.className = 'png-btns';
 
+        var isMobile = /Android|iPhone|iPad|iPod|Mobile|WeChat|MicroMessenger/i.test(navigator.userAgent);
         // 桌面端才显示下载按钮（手机上 download 无效，反而让人困惑）
         if (!isMobile) {
             var dl = document.createElement('button');
@@ -1898,7 +1897,6 @@
         });
         btns.appendChild(cls);
         wrap.appendChild(img);
-        wrap.appendChild(tip);
         wrap.appendChild(btns);
         mask.appendChild(wrap);
         mask.addEventListener('click', function (e) {
