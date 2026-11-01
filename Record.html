@@ -1063,7 +1063,7 @@
     var DIFF_LIMIT = 30000;            // 筹码差额上限 3 万
     var BASE_CHIPS = 160000;           // 每人初始码 16 万
     var MAX_HISTORY = 50;              // 本机最多保存 50 场
-    var STORAGE_KEY = 'wc_record_sessions_v2';
+    var STORAGE_KEY = 'wc_record_sessions_v3';
 
     var FACES = [
         { id: 'c500', label: '500', value: 500 },
@@ -2606,7 +2606,7 @@
             var self = this;
             var list;
             try {
-                list = JSON.parse(localStorage.getItem('wc_record_sessions_v2') || '[]');
+                list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
             } catch (e) { list = []; }
             if (!Array.isArray(list) || !list.length) { cb(0, 0); return; }
             var items = [];
@@ -2968,7 +2968,7 @@
     /* ★ 一次性标记键：不能以 wc_ 开头，否则会被自己删掉
      *   之前是「每次打开都清空」，会导致：① 本机历史场次永远留不下
      *   ② 未推送的待同步队列被清空 → 录入的数据丢失、云端也看不到 */
-    var PURGE_FLAG = 'sx_purge_v2_done';
+    var PURGE_FLAG = 'sx_purge_v3_done';
     function purgeLocalCache() {
         try {
             if (localStorage.getItem(PURGE_FLAG) === '1') { return 0; }
