@@ -14,3 +14,5 @@ cloudfunctions/recordSync/test/acceptance.js
 云函数环境变量.json
 .env
 *.env
+# 云函数源码：只在本地，手动打包 zip 上传腾讯云，不需要放仓库
+cloudfunctions/
