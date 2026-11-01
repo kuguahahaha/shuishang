@@ -1413,6 +1413,11 @@
         // 备份状态：整个页面唯一允许出现备份信息的位置
         html += Sync.statusHtml();
         el.settleBox.innerHTML = html;
+        // 「点这里完成设置」→ 打开绑定面板
+        var setupLink = el.settleBox.querySelector('#wcSetupLink');
+        if (setupLink) {
+            setupLink.addEventListener('click', function () { openBind(false); });
+        }
     }
 
     function escapeHtml(s) {
@@ -2375,9 +2380,15 @@
          *   普通用户遇到异常时也不提示——本机数据始终完整，不会丢。
          */
         statusHtml: function () {
-            // 仅管理员可见
-            if (!this.isAdmin) { return ''; }
             var st = this.status();
+            if (!this.isAdmin) {
+                // 普通用户：正常情况下完全无声；仅在「未配置团队接口」时给一条可点击的提示
+                // （否则数据只存本机、用户却以为已上传，排查极其困难）
+                if (st.mode === 'local') {
+                    return '<div class="backup-line warn">⚠ 数据仅保存在本机　<a href="javascript:void(0)" id="wcSetupLink">点这里完成设置</a></div>';
+                }
+                return '';
+            }
             if (st.mode === 'local') {
                 return '<div class="backup-line">✓ 数据已保存在本机</div>';
             }
