@@ -2030,6 +2030,22 @@
         };
     }
 
+    /* ---------- 解析云函数响应 ----------
+     * 腾讯云函数 URL 有两种返回形态：
+     *   ① 直接返回业务对象 { ok:true, ... }
+     *   ② 网关包装 { isBase64Encoded:false, headers:{...}, body:"{\"ok\":true}" }
+     * 统一拆出来给上层用。
+     */
+    function parseCloudResponse(json) {
+        if (!json || typeof json !== 'object') { return null; }
+        if (json.ok !== undefined || json.code !== undefined) { return json; }
+        if (typeof json.body === 'string') {
+            try { return JSON.parse(json.body); } catch (e) { return null; }
+        }
+        if (json.body && typeof json.body === 'object') { return json.body; }
+        return json;
+    }
+
     /* ==================== 团队协作 · 同步层 ====================
      * 硬性设计要求（v1.2）：
      *  1) 录入过程中界面**不出现任何**同步/上传/云端字样
@@ -2238,7 +2254,8 @@
                     body: body
                 }).then(function (res) {
                     return res.json().catch(function () { return { ok: false, message: '返回格式错误' }; });
-                }).then(function (data) {
+                }).then(function (raw) {
+                    var data = parseCloudResponse(raw) || { ok: false, message: '返回格式错误' };
                     if (data && data.ok) { ok(); }
                     else { fail(data && data.message, data && data.code); }
                 })['catch'](function (e) {
@@ -2252,7 +2269,7 @@
                     xhr.setRequestHeader('Content-Type', 'application/json');
                     xhr.onload = function () {
                         var data = null;
-                        try { data = JSON.parse(xhr.responseText); } catch (e) { }
+                        try { data = parseCloudResponse(JSON.parse(xhr.responseText)); } catch (e) { }
                         if (data && data.ok) { ok(); } else { fail(data && data.message, data && data.code); }
                     };
                     xhr.onerror = function () { fail('网络异常'); };
@@ -2283,7 +2300,8 @@
                     })
                 }).then(function (res) {
                     return res.json().catch(function () { return { ok: false, message: '返回格式错误' }; });
-                }).then(function (data) {
+                }).then(function (raw) {
+                    var data = parseCloudResponse(raw) || { ok: false, message: '返回格式错误' };
                     if (data && data.ok) {
                         self.lsSet(CFG.tokenKey, tokenHash);
                         if (data.role === 'admin') {
