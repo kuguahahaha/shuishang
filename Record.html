@@ -450,26 +450,43 @@
     .rank-badge.m1 { background: #f7dfa0; color: #6d4d05; }
     .rank-badge.m2 { background: #d5dde8; color: #47576b; }
     .rank-badge.m3 { background: #eccdb1; color: #7a4f28; }
-    .row-del {
-        background: none;
-        border: none;
-        color: #b8c6d8;
-        font-size: 15px;
-        padding: 0 4px;
-        cursor: pointer;
-        box-shadow: none;
-        flex: none;
+    /* ---------- 行内操作按钮：左右并排的两个图标 ---------- */
+    .rec-table td.op {
+        width: 62px;
+        min-width: 62px;
+        text-align: center;
+        padding: 0 2px;
+        white-space: nowrap;
     }
+    .rec-table th.op { width: 62px; min-width: 62px; }
+    .rec-table td.op .op-btns {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+    }
+    .row-del,
     .row-edit {
         background: none;
         border: none;
-        color: #2b85ff;
-        font-size: 12px;
-        padding: 0 4px;
         cursor: pointer;
         box-shadow: none;
         flex: none;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        font-size: 14px;
+        line-height: 1;
+        border-radius: 7px;
+        transition: background .15s, transform .1s;
     }
+    .row-del { color: #b8c6d8; }
+    .row-edit { color: #2b85ff; }
+    .row-edit:active, .row-del:active {
+        transform: scale(.9);
+    }
+    .row-edit:hover { background: #eaf3ff; }
+    .row-del:hover { background: #fdeeee; color: #d9534f; }
     .empty-tip {
         text-align: center;
         color: #a8b8cc;
@@ -590,27 +607,29 @@
         top: 0;
         right: 0;
         bottom: 0;
-        background: rgba(15, 30, 55, 0.72);
+        background: rgba(15, 30, 55, 0.92);
         z-index: 999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 12px;
-    }
-    .png-wrap {
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 10px;
-        max-width: 100%;
-        max-height: 100%;
+        display: block;
+        padding: 8px;
         overflow: auto;
         -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+    }
+    /* 全屏铺满版式：图片占满可用宽度，方便手机直接截图 */
+    .png-wrap {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 8px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: visible;
         text-align: center;
     }
     .png-canvas {
         display: block;
         width: 100%;
-        max-width: 900px;
+        max-width: 100%;
         height: auto;
         border: 1px solid #e3eefc;
         border-radius: 6px;
@@ -879,7 +898,7 @@
                     <th style="width:52px">本场积分</th>
                     <th style="width:66px">总码量</th>
                     <th style="width:52px">需支付</th>
-                    <th style="width:40px">操作</th>
+                    <th class="op" style="width:62px">操作</th>
                 </tr>
             </thead>
             <tbody id="recBody"></tbody>
@@ -1096,14 +1115,19 @@
     ];
 
     function guessSession(now) {
-        var h = now.getHours() + now.getMinutes() / 60;
-        // 凌晨 00:00-01:30 视为跨夜场（22:30 开始）
-        if (h < 1.5) { h += 24; }
-        var best = SESSION_SLOTS[0];
-        for (var i = 0; i < SESSION_SLOTS.length; i++) {
-            if (h >= SESSION_SLOTS[i].start) { best = SESSION_SLOTS[i]; }
-        }
-        return best.label;
+        // 按当前时刻匹配默认场次（用户指定的映射）
+        //   18:00-20:00  → 15:00-18:00
+        //   22:00-22:30  → 19:00-22:00
+        //   22:30-23:00  → 19:30-22:30
+        //   01:00-03:00  → 22:30-01:30
+        //   其他时间      → 15:00-18:00
+        var h = now.getHours();
+        var t = h + now.getMinutes() / 60;
+        if (t >= 18 && t < 20) { return '15:00-18:00'; }
+        if (t >= 22 && t < 22.5) { return '19:00-22:00'; }
+        if (t >= 22.5 && t < 23) { return '19:30-22:30'; }
+        if (t >= 1 && t < 3) { return '22:30-01:30'; }
+        return '15:00-18:00';
     }
 
     /* 四项必填：场次 / 桌号 / 人数 / 记录人 */
@@ -1318,23 +1342,30 @@
             mk(money(r.total));
             mk('¥' + r.pay);
 
+            // 操作列：改 / 删 两个图标左右并排
             var op = document.createElement('td');
+            op.className = 'op';
+            var opBtns = document.createElement('span');
+            opBtns.className = 'op-btns';
             var btnEdit = document.createElement('button');
             btnEdit.type = 'button';
             btnEdit.className = 'row-edit';
-            btnEdit.textContent = '改';
+            btnEdit.textContent = '✏️';
+            btnEdit.title = '修改这一行';
             btnEdit.addEventListener('click', (function (idx) {
                 return function () { loadRowToEntry(idx); };
             })(i));
             var btnDel = document.createElement('button');
             btnDel.type = 'button';
             btnDel.className = 'row-del';
-            btnDel.textContent = '✕';
+            btnDel.textContent = '🗑️';
+            btnDel.title = '删除这一行';
             btnDel.addEventListener('click', (function (idx) {
                 return function () { deleteRow(idx); };
             })(i));
-            op.appendChild(btnEdit);
-            op.appendChild(btnDel);
+            opBtns.appendChild(btnEdit);
+            opBtns.appendChild(btnDel);
+            op.appendChild(opBtns);
             tr.appendChild(op);
             el.recBody.appendChild(tr);
         }
@@ -1697,10 +1728,10 @@
         var rowH = 34;                       // 数据行高
         var headH = 30;                      // 表头高
         var W = 900;
-        var titleH = 96;                     // 标题 + 场次信息
+        var titleH = 78;                     // 标题 + 场次信息（全部一行）
         var medalH = 70;                     // 三名区
         var checkH = 92;                     // 差额/合计区
-        var footH = 46;                      // 记录人/审核人
+        var footH = 20;                      // 底部留白（记录人已移到头部）
         var H = titleH + headH + rowH * session.rows.length + medalH + checkH + footH + 28;
 
         var canvas = document.createElement('canvas');
@@ -1721,11 +1752,14 @@
         }
 
         // 标题
-        text('水上俱乐部 · 活动签到与积分记录表', W / 2, 28, 22, '#1f6fd0', true, 'center');
-        // 场次信息
-        text('日期：' + (session.date || '') + '　　场次：' + (session.sessionName || '') +
-            '　　桌号：' + (session.table || ''), W / 2, 58, 14, '#455a75', false, 'center');
-        text('人数：' + s.expected + ' 人', W / 2, 80, 13, '#7a8ba3', false, 'center');
+        text('水上俱乐部 · 活动签到与积分记录表', W / 2, 26, 22, '#1f6fd0', true, 'center');
+        // 场次信息：日期 / 场次 / 桌号 / 人数 / 记录人 全部一行，记录人紧跟人数后面
+        text('日期：' + (session.date || '') +
+            '　场次：' + (session.sessionName || '') +
+            '　桌号：' + (session.table || '') +
+            '　人数：' + s.expected +
+            '　记录人：' + (session.recorder || ''),
+            W / 2, 58, 13, '#455a75', false, 'center');
 
         // 表头
         var y = titleH;
@@ -1818,9 +1852,7 @@
             (s.count < s.expected ? '（还差 ' + (s.expected - s.count) + ' 人）' : ''),
             34, cy + 50, 14, '#455a75', false);
 
-        // 记录人
-        var fy = cy + checkH;
-        text('记录人：' + (session.recorder || ''), 34, fy + 14, 13, '#455a75');
+        // 记录人已移到头部信息行，这里不再重复
 
         var filename = fileBase(session) + '.png';
         // ★ 手机上不再直接触发下载（会被浏览器拦成"在浏览器中打开"）：
@@ -1839,8 +1871,32 @@
         tip.className = 'png-tip';
         var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
         tip.textContent = isMobile
-            ? '点「保存到手机」选「存储到照片 / 存储到文件」，也可长按图片保存'
-            : '点「保存到手机」直接下载，也可长按图片保存';
+            ? '图片已铺满屏幕，可直接截图；点「保存到手机」选「存储到照片 / 存储到文件」'
+            : '点「保存到手机」直接下载；点图片可放大看细节';
+
+        // ---------- 放大 / 还原 ----------
+        var zoomed = false;
+        var baseWidth = canvas.getBoundingClientRect().width || 900;
+        var zoomBtn = document.createElement('button');
+        zoomBtn.type = 'button';
+        zoomBtn.className = 'secondary';
+        zoomBtn.textContent = '放大';
+        function applyZoom() {
+            if (zoomed) {
+                canvas.style.width = '';
+                canvas.style.maxWidth = '';
+                wrap.style.width = '';
+                zoomBtn.textContent = '放大';
+            } else {
+                canvas.style.width = (baseWidth * 2) + 'px';
+                canvas.style.maxWidth = 'none';
+                wrap.style.width = (baseWidth * 2 + 18) + 'px';
+                zoomBtn.textContent = '还原';
+            }
+            zoomed = !zoomed;
+        }
+        canvas.addEventListener('click', function () { applyZoom(); });
+
         var btns = document.createElement('div');
         btns.className = 'png-btns';
         var dl = document.createElement('button');
@@ -1868,6 +1924,7 @@
             if (mask.parentNode) { mask.parentNode.removeChild(mask); }
         });
         btns.appendChild(dl);
+        btns.appendChild(zoomBtn);
         btns.appendChild(cls);
         wrap.appendChild(canvas);
         wrap.appendChild(tip);
