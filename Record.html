@@ -2278,6 +2278,38 @@
             }
         },
 
+        /* ---------- 校验身份（用已存的哈希，不改本地存储） ----------
+         * 用途：管理员链接带 ?at= 时，验证管理员口令是否真的正确。
+         * 口令错 → 静默降级为普通用户（不暴露管理员账号存在）。
+         */
+        verifyRole: function (cb) {
+            var endpoint = this.getEndpoint();
+            var tokenHash = this.getToken();
+            var adminHash = this.getAdminHash();
+            if (!endpoint || !tokenHash) { cb(false, '', 'user'); return; }
+            try {
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'bind',
+                        deviceId: this.deviceId,
+                        tokenHash: tokenHash,
+                        adminHash: adminHash || ''
+                    })
+                }).then(function (res) {
+                    return res.json().catch(function () { return { ok: false }; });
+                }).then(function (raw) {
+                    var data = parseCloudResponse(raw) || { ok: false };
+                    if (data && data.ok) {
+                        cb(true, '', data.role === 'admin' ? 'admin' : 'user');
+                    } else {
+                        cb(false, (data && data.message) || '', 'user');
+                    }
+                })['catch'](function () { cb(false, '', 'user'); });
+            } catch (e) { cb(false, '', 'user'); }
+        },
+
         /* ---------- 绑定（校验口令 / 管理员身份） ---------- */
         bind: function (token, adminToken, cb) {
             var self = this;
@@ -2337,11 +2369,14 @@
             };
         },
 
-        /* ---------- 结算面板底部那一行（唯一允许出现备份信息的地方） ----------
-         * 措辞原则：全程不出现「同步 / 上传 / 云端 / 备份 / 飞书」等字样，
-         * 只用中性表述说明「数据已记录 / 团队表格」。
+        /* ---------- 结算面板底部那一行 ----------
+         * ★ 普通牌友完全看不到这一行（界面彻底无感）
+         *   只有管理员（验证过管理员口令）才显示，用于确认数据是否已到表格。
+         *   普通用户遇到异常时也不提示——本机数据始终完整，不会丢。
          */
         statusHtml: function () {
+            // 仅管理员可见
+            if (!this.isAdmin) { return ''; }
             var st = this.status();
             if (st.mode === 'local') {
                 return '<div class="backup-line">✓ 数据已保存在本机</div>';
@@ -2387,6 +2422,14 @@
             Sync.lsSet(CFG.adminKey, Sha256.hash(q.at));
             Sync.isAdmin = true;
             changed = true;
+        } else if (q.tk) {
+            // ★ 普通链接（只有团队口令）→ 清除可能残留的管理员身份
+            //   否则牌友曾用管理员链接打开过，之后仍会看到管理员专属的状态行
+            if (Sync.ls(CFG.adminKey)) {
+                Sync.lsSet(CFG.adminKey, '');
+                changed = true;
+            }
+            Sync.isAdmin = false;
         }
         if (q.admin) {
             Sync.pendingAdmin = true;
@@ -2424,6 +2467,20 @@
         if (fromLink) {
             Sync.enabled = !!(Sync.getEndpoint() && Sync.getToken());
             Sync.isAdmin = !!Sync.getAdminHash();
+        }
+        // ★ 管理员身份需要向云端校验（本地标记不可信）
+        //   校验通过才显示结算面板底部那行状态；失败则静默降级为普通用户
+        if (Sync.isAdmin && Sync.getEndpoint() && Sync.getToken()) {
+            Sync.verifyRole(function (ok, msg, role) {
+                if (ok && role === 'admin') {
+                    Sync.isAdmin = true;
+                } else {
+                    // 管理员口令不对 → 静默降级为普通用户
+                    Sync.isAdmin = false;
+                    Sync.lsSet(CFG.adminKey, '');
+                }
+                renderSettle();
+            });
         }
         session = newSession();
         session.deviceId = Sync.deviceId;
