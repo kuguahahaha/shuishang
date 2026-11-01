@@ -1269,6 +1269,16 @@
         el.sessionHint.textContent = txt;
     }
 
+    /* ---------- 行唯一 ID ----------
+     * ★ 为什么需要：记录键原来是「场次ID|昵称」，
+     *   同名的两个人（比如两个「苏sir」）键相同 → 云端会互相覆盖，只剩一行。
+     * 现在改成「场次ID|行ID」，昵称单独一列 → 同名的人各存各的。
+     *   行ID 在「新增」时生成、「修改」时沿用 → 改名只是更新同一行，不会多出行。
+     */
+    function newRowId() {
+        return 'R' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
     /* ==================== 录入区实时计算 ==================== */
     function currentChips() {
         var sum = 0;
@@ -1418,7 +1428,8 @@
     }
 
     function deleteRow(idx) {
-        var name = session.rows[idx].name;
+        var row = session.rows[idx];
+        var name = row.name;
         if (!window.confirm('删除「' + name + '」这一条？')) { return; }
         session.rows.splice(idx, 1);
         if (editingIndex === idx) { editingIndex = -1; }
@@ -1426,6 +1437,10 @@
         session.updatedAt = new Date().toISOString();
         renderAll();
         saveHistory();
+        // ★ 通知云端删除这一行（否则云端会残留旧行 → 飞书表比实际多）
+        if (row && row.id) {
+            Sync.enqueueDelete(sessionKeyOf(session) + '|' + row.id);
+        }
     }
 
     /* ==================== 结算渲染 ==================== */
@@ -2071,6 +2086,7 @@
         var cards = currentCards();
         var r = calcRow(chips, cards);
         var row = {
+            id: newRowId(),
             name: name,
             chips: r.chips,
             cards: r.cards,
@@ -2081,6 +2097,9 @@
             points: r.points
         };
         if (editingIndex >= 0) {
+            // ★ 修改：沿用原来的行ID（云端按 ID 匹配 → 只更新这一行，不会多出新行）
+            var oldRow = session.rows[editingIndex];
+            if (oldRow && oldRow.id) { row.id = oldRow.id; }
             session.rows[editingIndex] = row;
             editingIndex = -1;
         } else {
@@ -2094,7 +2113,7 @@
         // 备份到团队表格（本地模式自动跳过，界面无任何提示）
         Sync.enqueue({
             type: 'record',
-            key: sessionKeyOf(session) + '|' + row.name,
+            key: sessionKeyOf(session) + '|' + row.id,
             session: sessionMetaOf(session),
             row: row
         });
@@ -2392,6 +2411,16 @@
             try { this.flush(); } catch (e) { this.schedule(120); }
         },
 
+        /* ---------- 删除某行（同步到云端） ----------
+         * 网页端删掉的行，云端也要删掉，否则飞书表会残留旧行。 */
+        enqueueDelete: function (key) {
+            if (!this.enabled || !key) { return; }
+            this.queue.push({ type: 'delete', key: key });
+            if (this.queue.length > this.MAX_QUEUE) { this.queue.shift(); }
+            this.saveQueue();
+            try { this.flush(); } catch (e) { this.schedule(120); }
+        },
+
         /* ---------- 推送 ---------- */
         schedule: function (delay) {
             var self = this;
@@ -2404,6 +2433,11 @@
             var self = this;
             var endpoint = this.getEndpoint();
             if (!endpoint) { return; }
+            // ★ 并发锁：同一时刻只允许一个推送请求
+            //   两个请求并发时，云端会同时「拉全表 → 都判定该记录不存在 → 各建一行」
+            //   → 出现重复行（实测出现过同一个昵称 2 行）。
+            if (this.inflight) { this.pendingFlush = true; return; }
+            this.inflight = true;
             var batch = this.queue.slice(0, 20);
             var body = JSON.stringify({
                 action: 'sync',
@@ -2414,13 +2448,16 @@
             });
 
             function ok() {
+                self.inflight = false;
                 self.queue.splice(0, batch.length);
                 self.saveQueue();
                 self.lastError = '';
                 self.retry = 0;
                 if (self.queue.length) { self.schedule(1500); }
+                else if (self.pendingFlush) { self.pendingFlush = false; self.schedule(50); }
             }
             function fail(msg, code) {
+                self.inflight = false;
                 self.lastError = msg || '';
                 self.retry++;
                 // 口令错误属于不可重试的异常：停下并保留队列，等待用户处理
@@ -2433,6 +2470,7 @@
                 try {
                     var blob = new Blob([body], { type: 'application/json' });
                     if (navigator.sendBeacon(endpoint, blob)) { ok(); }
+                    else { self.inflight = false; }
                     return;
                 } catch (e) { /* 落回 fetch */ }
             }
