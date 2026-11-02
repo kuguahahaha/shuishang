@@ -3181,6 +3181,19 @@
      */
     var KEEP_LOCAL_KEYS = ['wc_sync_device_id'];
 
+    /** 牌友专用：每次进入页面都从空白开始。
+     *  · 只清「历史场次」（也就是上一场的数据），不动绑定信息与未发送队列
+     *    —— 队列里是还没传上去的记录，清掉就真丢了；清完绑定点一下就又能传。
+     *  · 管理员不清（他要靠历史场次载入别人录的场次）。
+     */
+    function clearGuestLocalData() {
+        try {
+            var had = localStorage.getItem(STORAGE_KEY) !== null;
+            localStorage.removeItem(STORAGE_KEY);
+            return had ? 1 : 0;
+        } catch (e) { return 0; }
+    }
+
     /** 彻底清掉本机的业务缓存（历史场次 / 队列 / 绑定信息 / 清理标记），只保留设备号。
      *  用于「管理员云端清空数据」时把各设备一起重置 —— 否则手机上的旧队列会一直往云端补传。
      */
@@ -3236,6 +3249,12 @@
             // 管理员身份一律先置 false，等云端校验通过再置 true
             Sync.isAdmin = false;
         }
+        // ★★ 牌友：每次进来都清空本机数据，不保留上一场
+        //   判据：本地没有管理员标记 = 牌友（管理员链接的 at= 已在 applyUrlParams 写入）
+        if (!Sync.getAdminHash()) {
+            try { clearGuestLocalData(); } catch (e) { }
+        }
+
         // ★ 管理员身份需要向云端校验（本地标记不可信）
         //   校验通过才显示结算面板底部那行状态；失败则静默降级为普通用户
         // ★ 配置就绪（首次拿到正确链接）→ 自动把本机历史补传上去
