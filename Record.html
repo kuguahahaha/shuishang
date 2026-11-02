@@ -1064,9 +1064,9 @@
 <!-- ===================== 团队访问口令 绑定弹窗 ===================== -->
 <div class="modal-mask" id="bindMask" style="display:none">
     <div class="modal-box">
-        <div class="modal-title">团队访问口令</div>
-        <div class="modal-desc" id="bindDesc">首次使用需输入一次团队口令，输入一次即可，之后不再提示。</div>
-        <input type="text" id="bindToken" placeholder="请输入团队口令" maxlength="64" autocomplete="off">
+        <div class="modal-title">访问口令</div>
+        <div class="modal-desc" id="bindDesc">首次使用需输入一次口令，输入一次即可，之后不再提示。</div>
+        <input type="text" id="bindToken" placeholder="请输入访问口令" maxlength="64" autocomplete="off">
         <div class="modal-row">
             <input type="checkbox" id="bindIsAdmin">
             <span>我是管理员（需额外验证）</span>
@@ -1075,7 +1075,7 @@
         <div class="modal-err" id="bindErr"></div>
         <div class="modal-btns">
             <button id="bindCancel" type="button" class="secondary">取消</button>
-            <button id="bindOk" type="button">绑定本机</button>
+            <button id="bindOk" type="button">确认</button>
         </div>
     </div>
 </div>
@@ -1299,6 +1299,8 @@
             if (el.sessionHint) { el.sessionHint.textContent = ''; }
             return;
         }
+        // 牌友：设置面板一律收起（管理员不受影响）
+        if (el.teamBox) { el.teamBox.style.display = 'none'; }
         showEl(el.blkEntry, st === STAGE_ENTRY);
         showEl(el.blkRec, st !== STAGE_CONFIRM);
         showEl(el.blkSettle, st === STAGE_DONE);
@@ -2328,6 +2330,10 @@
         var titleTaps = 0;
         var titleTimer = null;
         el.pageTitle.addEventListener('click', function () {
+            // ★ 只有管理员链接才允许唤出设置面板
+            //   否则牌友连点标题就能看到「接口地址 / 重新绑定口令 / 分享链接」，
+            //   既困惑又可能把带口令的链接转出去。
+            if (!Sync.getAdminHash()) { return; }
             titleTaps++;
             if (titleTimer) { clearTimeout(titleTimer); }
             titleTimer = setTimeout(function () { titleTaps = 0; }, 1200);
@@ -2907,7 +2913,7 @@
                         self.lsSet('wc_wipe_ack', sig);   // 回执要在清理之后写，否则会被一起删掉
                         self.queue = [];
                         self.saveQueue();
-                        showToast('管理员已清空数据，本机缓存已重置', 4200);
+                        showToast('数据已重置，页面即将刷新', 4200);
                         setTimeout(function () { location.reload(); }, 1600);
                     }
                     return;
@@ -2918,14 +2924,14 @@
                     //   给一次明确提示，否则他会以为录进去了。
                     if (!self.tokenWarned) {
                         self.tokenWarned = true;
-                        showToast('口令已更新，请重新扫描二维码（本机数据会保留）', 5000);
+                        showToast('请重新扫描二维码（已录数据不会丢失）', 5000);
                     }
                     return;
                 }
                 if (code === 'DEVICE_DISABLED') {
                     if (!self.deviceWarned) {
                         self.deviceWarned = true;
-                        showToast('本设备已被停用，请联系管理员', 5000);
+                        showToast('这台手机已停用，请联系组织者', 5000);
                     }
                     return;
                 }
@@ -3075,11 +3081,10 @@
         statusHtml: function () {
             var st = this.status();
             if (!this.isAdmin) {
-                // 普通用户：正常情况下完全无声；仅在「未配置团队接口」时给一条可点击的提示
-                // （否则数据只存本机、用户却以为已上传，排查极其困难）
-                if (st.mode === 'local') {
-                    return '<div class="backup-line warn">⚠ 数据仅保存在本机　<a href="javascript:void(0)" id="wcSetupLink">点这里完成设置</a></div>';
-                }
+                // ★ 牌友：**任何情况下都不显示状态行**
+                //   以前「未启用同步」时会显示「数据仅保存在本机，点这里完成设置」，
+                //   对牌友来说是干扰（还暴露了"本机/云端"的概念）。牌友只要录好就行，
+                //   异常由管理员侧察觉（管理员仍能看到完整状态）。
                 return '';
             }
             if (st.mode === 'local') {
