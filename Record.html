@@ -3181,6 +3181,25 @@
      */
     var KEEP_LOCAL_KEYS = ['wc_sync_device_id'];
 
+    /** 牌友进入时：找「还没结束录入 + 15 分钟内改过」的那一场。
+     *  找到 → 接着录（防止手滑刷新后重录造成云端重复）；
+     *  找不到 → 视为上一场已经结束/太久远，直接清空重来。
+     */
+    var GUEST_RESUME_MS = 15 * 60 * 1000;
+    function findRecentUnfinishedSession() {
+        var list = loadHistory();
+        var best = null, bestTime = 0;
+        for (var i = 0; i < list.length; i++) {
+            var it = list[i];
+            if (!it || !it.rows || !it.rows.length) { continue; }
+            if (it.stage === 'done' || it.closed) { continue; }   // 已结束的不接回
+            var t = Date.parse(it.updatedAt || '');
+            if (!t || (Date.now() - t) > GUEST_RESUME_MS) { continue; }
+            if (t > bestTime) { bestTime = t; best = it; }
+        }
+        return best ? JSON.parse(JSON.stringify(best)) : null;
+    }
+
     /** 牌友专用：每次进入页面都从空白开始。
      *  · 只清「历史场次」（也就是上一场的数据），不动绑定信息与未发送队列
      *    —— 队列里是还没传上去的记录，清掉就真丢了；清完绑定点一下就又能传。
@@ -3249,10 +3268,15 @@
             // 管理员身份一律先置 false，等云端校验通过再置 true
             Sync.isAdmin = false;
         }
-        // ★★ 牌友：每次进来都清空本机数据，不保留上一场
+        // ★★ 牌友进入策略：15 分钟内「还没结束录入」的那一场自动接回（防手滑刷新重录）；
+        //   其余情况一律清空，保证下一场从空白开始。
         //   判据：本地没有管理员标记 = 牌友（管理员链接的 at= 已在 applyUrlParams 写入）
+        var guestResume = null;
         if (!Sync.getAdminHash()) {
-            try { clearGuestLocalData(); } catch (e) { }
+            try {
+                guestResume = findRecentUnfinishedSession();
+                if (!guestResume) { clearGuestLocalData(); }
+            } catch (e) { }
         }
 
         // ★ 管理员身份需要向云端校验（本地标记不可信）
@@ -3291,10 +3315,15 @@
         if (el.fSession && !session.sessionName) {
             session.sessionName = guessSession(new Date());
         }
-        // ★ 自动接回「正在进行的那一场」：牌友界面已没有历史场次入口，
-        //   刷新后必须能接着录，否则重录会造成云端重复行。
-        var ongoing = restoreOngoingSession();
-        if (ongoing) { session = ongoing; }
+        // ★ 自动接回「正在进行的那一场」
+        //   牌友：只认上面找到的 15 分钟内的未结束场次；
+        //   管理员：沿用原来的 3 小时 + 场次名匹配规则。
+        if (guestResume) {
+            session = guestResume;
+        } else {
+            var ongoing = restoreOngoingSession();
+            if (ongoing) { session = ongoing; }
+        }
         // 桌号不填默认值（留空让用户自己填）
         loadSessionToForm();
         bindEvents();
