@@ -1364,6 +1364,21 @@
         return 'R' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     }
 
+    /** ★ 保证每一行都有唯一 id。
+     *  为什么要强制：云端记录键 = 「场次ID|行ID」，没有行ID时只能退回用昵称当键
+     *  → 同名两次录入会被当成同一条覆盖掉（表现为「输 2 次只记 1 次」）。
+     *  老数据 / 从云端载入的数据都可能缺 id，所以每个入口都补一次。
+     */
+    function ensureRowIds(rows) {
+        if (!rows || !rows.length) { return 0; }
+        var fixed = 0;
+        for (var i = 0; i < rows.length; i++) {
+            if (!rows[i]) { continue; }
+            if (!rows[i].id) { rows[i].id = newRowId(); fixed++; }
+        }
+        return fixed;
+    }
+
     /* ==================== 录入区实时计算 ==================== */
     function currentChips() {
         var sum = 0;
@@ -1803,16 +1818,17 @@
             if (!t || (Date.now() - t) > 3 * 3600 * 1000) { continue; }
             if (t > bestTime) { bestTime = t; best = it; }
         }
-        return best ? JSON.parse(JSON.stringify(best)) : null;
+        if (!best) { return null; }
+        var copy = JSON.parse(JSON.stringify(best));
+        ensureRowIds(copy.rows);
+        return copy;
     }
 
     function loadSession(item, isLocal) {
         session = JSON.parse(JSON.stringify(item));
         if (item.deviceId) { session.deviceId = item.deviceId; }
-        // 云端场次的行可能没有 id（老数据）→ 补一个稳定 id，避免改名/删除时错乱
-        for (var i = 0; i < session.rows.length; i++) {
-            if (!session.rows[i].id) { session.rows[i].id = 'R' + i + '_' + Math.random().toString(36).slice(2, 8); }
-        }
+        // 云端场次的行可能没有 id（老数据）→ 统一补齐
+        ensureRowIds(session.rows);
         editingIndex = -1;
         loadSessionToForm();
         renderAll();
@@ -2389,6 +2405,7 @@
         renderAll();
         saveHistory();
         // 备份到团队表格（本地模式自动跳过，界面无任何提示）
+        if (!row.id) { row.id = newRowId(); }   // 兜底：绝不能出现没有 id 的行
         Sync.enqueue({
             type: 'record',
             key: sessionKeyOf(session) + '|' + row.id,
