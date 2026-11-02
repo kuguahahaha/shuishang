@@ -415,6 +415,24 @@
         cursor: not-allowed;
         box-shadow: none;
     }
+    /* 牌友分阶段流程：锁定中的场次信息 */
+    .field input:disabled, .field select:disabled {
+        background: #f2f6fd;
+        color: #7a8ba3;
+        -webkit-text-fill-color: #7a8ba3;
+        cursor: not-allowed;
+    }
+    .stage-tip {
+        margin-top: 8px;
+        padding: 8px 10px;
+        background: #f2f7ff;
+        border: 1px solid #d7e6fb;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #5b7291;
+        line-height: 1.6;
+    }
+
     /* 轻提示 */
     .toast {
         position: fixed;
@@ -828,8 +846,11 @@
     </div>
 
     <!-- ===================== 场次信息 ===================== -->
-    <div class="block">
-        <div class="block-title">📋 场次信息 <span class="hint" id="sessionHint"></span></div>
+    <div class="block" id="blkInfo">
+        <div class="block-title">
+            <span>📋 场次信息</span>
+            <span class="hint" id="sessionHint"></span>
+        </div>
         <div class="field-grid">
             <!-- 日期：页面右上角已有日期时间，这里不再单独展示（代码保留，字段仍自动记录当天日期） -->
             <!--
@@ -871,10 +892,18 @@
             </div>
             -->
         </div>
+        <!-- 牌友专用：先确认场次信息，确认后锁定，避免改数据时忘了改上面的桌号/人数 -->
+        <div class="btn-row" id="infoActions" style="margin-top:10px">
+            <button id="btnConfirmSession" type="button" style="display:none">确认场次信息，开始录入</button>
+            <button id="btnEditSession" type="button" class="ghost" style="display:none">修改场次信息</button>
+        </div>
+        <div class="stage-tip" id="infoLockTip" style="display:none">
+            场次信息已锁定。要改桌号 / 人数 / 记录人，请点「修改场次信息」。
+        </div>
     </div>
 
     <!-- ===================== 录入区 ===================== -->
-    <div class="block block-orange">
+    <div class="block block-orange" id="blkEntry">
         <div class="block-title row-entry">
             <span>✍️ 逐人录入</span>
             <input type="text" id="recName" class="rec-name" placeholder="输入玩家昵称" maxlength="12" autocomplete="off">
@@ -946,7 +975,7 @@
     </div>
 
     <!-- ===================== 记录表 ===================== -->
-    <div class="block">
+    <div class="block" id="blkRec">
         <div class="block-title">
             <span>📊 本场记录</span>
             <span class="hint" id="recCount">已录 0 人</span>
@@ -966,12 +995,13 @@
         </table>
         <div class="empty-tip" id="recEmpty">还没有录入任何玩家，先在上面录入第一位</div>
         <div class="btn-row" style="margin-top:8px">
+            <button id="btnResume" type="button" class="ghost" style="display:none">继续录入</button>
             <button id="btnClear" type="button" class="ghost">录入下一场</button>
         </div>
     </div>
 
     <!-- ===================== 结算区 ===================== -->
-    <div class="block block-green">
+    <div class="block block-green" id="blkSettle">
         <div class="block-title">🏆 结算与排名 <span class="hint">录完所有玩家后自动生成</span></div>
         <div id="settleBox">
             <div class="empty-tip">录入并「结束录入」后，这里显示前三名、筹码差额与支付合计</div>
@@ -979,7 +1009,7 @@
     </div>
 
     <!-- ===================== 导出 ===================== -->
-    <div class="block">
+    <div class="block" id="blkExport">
         <div class="block-title">
             <span>💾 导出</span>
             <button id="btnPng" type="button" class="btn-mini btn-mini-wide">导出图片</button>
@@ -1123,6 +1153,17 @@
         el.hisBlock = $('hisBlock');
         el.btnHisRefresh = $('btnHisRefresh');
         el.toast = $('toast');
+        el.blkInfo = $('blkInfo');
+        el.blkEntry = $('blkEntry');
+        el.blkRec = $('blkRec');
+        el.blkSettle = $('blkSettle');
+        el.blkExport = $('blkExport');
+        el.sessionHint = $('sessionHint');
+        el.infoLockTip = $('infoLockTip');
+        el.infoActions = $('infoActions');
+        el.btnConfirmSession = $('btnConfirmSession');
+        el.btnEditSession = $('btnEditSession');
+        el.btnResume = $('btnResume');
         el.cfgEndpoint = $('cfgEndpoint');
         el.btnSaveCfg = $('btnSaveCfg');
         el.btnRebind = $('btnRebind');
@@ -1219,6 +1260,65 @@
         showToast._timer = setTimeout(function () { t.classList.remove('show'); }, ms || 2200);
     }
 
+    /* ==================== 牌友分阶段流程 ====================
+     * 动机：以前桌号 / 人数 / 记录人 和逐人录入混在一起，改完某一行容易忘记
+     * 上面的场次信息，导致整场录到别的桌号下（真实发生过：桌号1、2 分裂）。
+     * 现在牌友必须：① 确认场次信息 → ② 逐人录入（信息锁定）→ ③ 结束录入后才出结算与导出。
+     * 管理员不受影响（一次看全）。
+     */
+    var STAGE_CONFIRM = 'confirm';
+    var STAGE_ENTRY = 'entry';
+    var STAGE_DONE = 'done';
+
+    function curStage() {
+        return session.stage || STAGE_CONFIRM;
+    }
+
+    function showEl(node, ok) {
+        if (node) { node.style.display = ok ? '' : 'none'; }
+    }
+
+    function lockSessionInfo(lock) {
+        var fields = [el.fSession, el.fTable, el.fExpected, el.fRecorder];
+        for (var i = 0; i < fields.length; i++) {
+            if (!fields[i]) { continue; }
+            fields[i].disabled = !!lock;
+        }
+        showEl(el.infoLockTip, !!lock);
+    }
+
+    function applyStage() {
+        var admin = !!Sync.isAdmin;
+        var st = curStage();
+        if (admin) {
+            // 管理员：全开，不做锁定
+            showEl(el.blkEntry, true); showEl(el.blkRec, true);
+            showEl(el.blkSettle, true); showEl(el.blkExport, true);
+            lockSessionInfo(false);
+            showEl(el.btnConfirmSession, false); showEl(el.btnEditSession, false); showEl(el.btnResume, false);
+            if (el.sessionHint) { el.sessionHint.textContent = ''; }
+            return;
+        }
+        showEl(el.blkEntry, st === STAGE_ENTRY);
+        showEl(el.blkRec, st !== STAGE_CONFIRM);
+        showEl(el.blkSettle, st === STAGE_DONE);
+        showEl(el.blkExport, st === STAGE_DONE);
+        lockSessionInfo(st !== STAGE_CONFIRM);
+        showEl(el.btnConfirmSession, st === STAGE_CONFIRM);
+        showEl(el.btnEditSession, st !== STAGE_CONFIRM);
+        showEl(el.btnResume, st === STAGE_DONE);
+        if (el.sessionHint) {
+            el.sessionHint.textContent = st === STAGE_CONFIRM ? '请先确认场次与桌号'
+                : (st === STAGE_DONE ? '已结束录入' : '录入中');
+        }
+    }
+
+    function setStage(st) {
+        session.stage = st;
+        saveHistory();
+        applyStage();
+    }
+
     /* 未填齐时「录入下一位」置灰 —— ★ 不设 disabled，
      *   否则浏览器不派发 click 事件，用户点了毫无反应也看不到缺什么。
      *   改成置灰样式 + 点击后弹出「请先填写：…」提示。
@@ -1279,6 +1379,7 @@
             reviewer: '',
             rating: '',
             deviceId: '',
+            stage: 'confirm',   // 牌友流程：confirm 待确认 → entry 录入中 → done 已结束
             rows: [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
@@ -1833,6 +1934,7 @@
         loadSessionToForm();
         renderAll();
         saveHistory();
+        applyStage();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -2304,6 +2406,35 @@
             });
         }
 
+        /* 「确认场次信息」：四项必填校验通过后进入录入阶段 */
+        if (el.btnConfirmSession) {
+            el.btnConfirmSession.addEventListener('click', function () {
+                readFormToSession();
+                var lack = missingRequired();
+                if (lack.length) {
+                    showToast('请先填写：' + lack.join('、'));
+                    return;
+                }
+                setStage(STAGE_ENTRY);
+                if (el.recName) { el.recName.focus(); }
+            });
+        }
+        /* 「修改场次信息」：解锁并回到确认阶段 */
+        if (el.btnEditSession) {
+            el.btnEditSession.addEventListener('click', function () {
+                if (session.rows.length) {
+                    if (!window.confirm('修改场次信息会重新锁定录入。已录的 ' + session.rows.length + ' 条会保留，确认继续？')) { return; }
+                }
+                setStage(STAGE_CONFIRM);
+            });
+        }
+        /* 「继续录入」：从已结束状态回到录入（结算/导出会收起） */
+        if (el.btnResume) {
+            el.btnResume.addEventListener('click', function () {
+                setStage(STAGE_ENTRY);
+            });
+        }
+
         /* 「录入下一场」：只在本机开新的一场，**完全不动云端数据**
          * ★ 原来是「清空当前场次」——一点就把本场已录数据抹掉、且和云端不一致，太危险。
          *   现在改成：把当前场次标记为已结束（closed），再新建一场空白场次。
@@ -2335,10 +2466,12 @@
             session.sessionName = guessSession(new Date());
 
             editingIndex = -1;
+            session.stage = STAGE_CONFIRM;   // 新一场必须重新确认桌号/人数/记录人
             loadSessionToForm();
             clearEntry();
             renderAll();
             refreshEntryState();
+            applyStage();
             // ③ 不调用 saveHistory：新场次还没有数据，不往历史列表里塞空记录
             showToast('已切到新的一场，本机界面已清空');
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2429,6 +2562,7 @@
         }
         msg += '。确认结束录入并生成结算？';
         if (!window.confirm(msg)) { return; }
+        session.stage = STAGE_DONE;   // 牌友：结束后才显示结算与导出
         renderSettle();
         saveHistory();
         // 场次元信息一并备份（飞书里形成一张完整的场次行）
@@ -2439,6 +2573,7 @@
         });
         // ★ 结束录入时名次已最终确定 → 补推一遍全场的名次
         syncRankChanges();
+        applyStage();
         el.settleBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -3125,6 +3260,7 @@
                     Sync.lsSet(CFG.adminKey, '');
                 }
                 renderSettle();
+                applyStage();   // 管理员 / 牌友 的可见范围不同，身份确定后重刷
                 // ★ 管理员：显示历史场次并向云端拉取「所有牌友填过的场次」
                 renderHistory();
                 if (Sync.isAdmin) { pullCloudSessions(); }
@@ -3147,6 +3283,7 @@
         clearEntry();
         renderAll();
         renderHistory();
+        applyStage();
         refreshEntryState();
         el.recName.focus();
         // ★ 没配置团队接口（打开的是不带参数的旧链接）→ 明确提示并给出口令输入
